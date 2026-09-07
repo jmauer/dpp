@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Översikt",
+    "dashboard": "Instrumentpanel",
+    "products": "Produkter",
+    "passports": "Produktpass",
+    "supplyChain": "Leveranskedja",
+    "compliance": "Efterlevnad",
+    "regulations": "Reglering",
+    "reports": "Rapporter",
+    "system": "System",
+    "settings": "Inställningar",
+    "logout": "Logga ut",
+    "openMenu": "Öppna navigation",
+    "closeMenu": "Stäng navigation",
+    "notifications": "Aviseringar"
+  },
+  "time": {
+    "justNow": "Just nu",
+    "minutesAgo": "för {n} min sedan",
+    "hoursAgo": "för {n} h sedan",
+    "daysAgo": "för {n} dag(ar) sedan"
+  },
+  "notifications": {
+    "markAllRead": "Markera alla som lästa",
+    "viewAll": "Visa alla",
+    "empty": "Inga aviseringar"
+  },
+  "auth": {
+    "login": "Logga in",
+    "logout": "Logga ut",
+    "email": "E-postadress",
+    "password": "Lösenord",
+    "forgotPassword": "Glömt?",
+    "loginError": "Felaktig e-post eller lösenord.",
+    "loggingIn": "Loggar in…",
+    "demoCredentials": "Demoinloggningsuppgifter",
+    "welcomeBack": "Välkommen tillbaka",
+    "signInPrompt": "Logga in på ditt PassPort DPP-konto.",
+    "emailPlaceholder": "namnEmailforetag.se",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "products": {
+    "title": "Produktpass",
+    "subtitle": "{filtered} av {total} produkter",
+    "newPassport": "Nytt pass",
+    "export": "Exportera",
+    "search": "Sök produkt eller SKU…",
+    "filters": {
+      "all": "Alla",
+      "ok": "Fullständig",
+      "warn": "Ofullständig",
+      "crit": "Kritisk",
+      "draft": "Utkast"
+    },
+    "status": {
+      "ok": "Fullständig",
+      "warn": "Ofullständig",
+      "crit": "Kritisk",
+      "draft": "Utkast"
+    },
+    "gaps": {
+      "open": "{n} öppen/öppna",
+      "none": "—",
+      "missing": "Saknas",
+      "outdated": "Inaktuell",
+      "unverified": "Overifierad"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Laddar…",
+    "error": "Fel",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "edit": "Redigera",
+    "close": "Stäng",
+    "back": "Tillbaka",
+    "next": "Nästa",
+    "confirm": "Bekräfta",
+    "search": "Sök",
+    "filter": "Filtrera",
+    "export": "Exportera",
+    "download": "Ladda ner",
+    "copy": "Kopiera",
+    "copied": "Kopierat!",
+    "share": "Dela",
+    "yes": "Ja",
+    "no": "Nej",
+    "na": "—",
+    "verified": "Verifierad",
+    "recycled": "♻ Återvunnen",
+    "days": "{n} dag | {n} dagar",
+    "daysLeft": "om {n} dagar",
+    "noData": "Inga data tillgängliga",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Digitalt produktpass. Enkelt. Regelrätt. Transparent.",
+    "subline": "Enterpriseplattformen för att hantera EU-kompatibla produktpass.",
+    "batteryReg": "EU:s batteriförordning"
+  }
+}

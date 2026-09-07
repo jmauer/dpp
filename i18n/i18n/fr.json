@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Vue d'ensemble",
+    "dashboard": "Tableau de bord",
+    "products": "Produits",
+    "passports": "Passeports produits",
+    "supplyChain": "Chaîne d'approvisionnement",
+    "compliance": "Conformité",
+    "regulations": "Réglementation",
+    "reports": "Rapports",
+    "system": "Système",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "openMenu": "Ouvrir la navigation",
+    "closeMenu": "Fermer la navigation",
+    "notifications": "Notifications"
+  },
+  "time": {
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {n} min",
+    "hoursAgo": "il y a {n} h",
+    "daysAgo": "il y a {n} jour(s)"
+  },
+  "notifications": {
+    "markAllRead": "Tout marquer comme lu",
+    "viewAll": "Voir tout",
+    "empty": "Aucune notification"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "forgotPassword": "Oublié ?",
+    "loginError": "E-mail ou mot de passe incorrect.",
+    "loggingIn": "Connexion…",
+    "demoCredentials": "Identifiants de démonstration",
+    "welcomeBack": "Bon retour",
+    "signInPrompt": "Connectez-vous à votre compte PassPort DPP.",
+    "emailPlaceholder": "nomEmailentreprise.fr",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "fillDemo": "Remplir les données démo",
+    "privacy": "Confidentialité",
+    "imprint": "Mentions légales"
+  },
+  "products": {
+    "title": "Passeports produits",
+    "subtitle": "{filtered} sur {total} produits",
+    "newPassport": "Nouveau passeport",
+    "export": "Exporter",
+    "search": "Rechercher un produit ou SKU…",
+    "filters": {
+      "all": "Tous",
+      "ok": "Complet",
+      "warn": "Incomplet",
+      "crit": "Critique",
+      "draft": "Brouillon"
+    },
+    "status": {
+      "ok": "Complet",
+      "warn": "Incomplet",
+      "crit": "Critique",
+      "draft": "Brouillon"
+    },
+    "gaps": {
+      "open": "{n} ouvert(s)",
+      "none": "—",
+      "missing": "Manquant",
+      "outdated": "Obsolète",
+      "unverified": "Non vérifié"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Chargement…",
+    "error": "Erreur",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "confirm": "Confirmer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "download": "Télécharger",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "share": "Partager",
+    "yes": "Oui",
+    "no": "Non",
+    "na": "—",
+    "verified": "Vérifié",
+    "recycled": "♻ Recyclé",
+    "days": "{n} jour | {n} jours",
+    "daysLeft": "dans {n} jours",
+    "noData": "Aucune donnée disponible",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Passeport Produit Numérique.\nSimple. Conforme. Transparent.",
+    "subline": "La plateforme enterprise pour les moyennes et grandes entreprises gérant des passeports produits conformes à l'UE.",
+    "batteryReg": "Règlement UE sur les batteries"
+  }
+}

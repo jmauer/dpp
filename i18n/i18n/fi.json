@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Yleiskatsaus",
+    "dashboard": "Kojelauta",
+    "products": "Tuotteet",
+    "passports": "Tuotepassit",
+    "supplyChain": "Toimitusketju",
+    "compliance": "Vaatimustenmukaisuus",
+    "regulations": "Säädökset",
+    "reports": "Raportit",
+    "system": "Järjestelmä",
+    "settings": "Asetukset",
+    "logout": "Kirjaudu ulos",
+    "openMenu": "Avaa navigaatio",
+    "closeMenu": "Sulje navigaatio",
+    "notifications": "Ilmoitukset"
+  },
+  "time": {
+    "justNow": "Juuri nyt",
+    "minutesAgo": "{n} min sitten",
+    "hoursAgo": "{n} t sitten",
+    "daysAgo": "{n} päivä(ä) sitten"
+  },
+  "notifications": {
+    "markAllRead": "Merkitse kaikki luetuiksi",
+    "viewAll": "Näytä kaikki",
+    "empty": "Ei ilmoituksia"
+  },
+  "auth": {
+    "login": "Kirjaudu sisään",
+    "logout": "Kirjaudu ulos",
+    "email": "Sähköpostiosoite",
+    "password": "Salasana",
+    "forgotPassword": "Unohditko?",
+    "loginError": "Väärä sähköposti tai salasana.",
+    "loggingIn": "Kirjaudutaan…",
+    "demoCredentials": "Demotunnukset",
+    "welcomeBack": "Tervetuloa takaisin",
+    "signInPrompt": "Kirjaudu PassPort DPP -tilillesi.",
+    "emailPlaceholder": "nimiEmailyritys.fi",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "products": {
+    "title": "Tuotepassit",
+    "subtitle": "{filtered} / {total} tuotetta",
+    "newPassport": "Uusi passi",
+    "export": "Vie",
+    "search": "Hae tuotetta tai SKU:ta…",
+    "filters": {
+      "all": "Kaikki",
+      "ok": "Täydellinen",
+      "warn": "Puutteellinen",
+      "crit": "Kriittinen",
+      "draft": "Luonnos"
+    },
+    "status": {
+      "ok": "Täydellinen",
+      "warn": "Puutteellinen",
+      "crit": "Kriittinen",
+      "draft": "Luonnos"
+    },
+    "gaps": {
+      "open": "{n} avoinna",
+      "none": "—",
+      "missing": "Puuttuu",
+      "outdated": "Vanhentunut",
+      "unverified": "Vahvistamaton"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Ladataan…",
+    "error": "Virhe",
+    "save": "Tallenna",
+    "cancel": "Peruuta",
+    "delete": "Poista",
+    "edit": "Muokkaa",
+    "close": "Sulje",
+    "back": "Takaisin",
+    "next": "Seuraava",
+    "confirm": "Vahvista",
+    "search": "Hae",
+    "filter": "Suodata",
+    "export": "Vie",
+    "download": "Lataa",
+    "copy": "Kopioi",
+    "copied": "Kopioitu!",
+    "share": "Jaa",
+    "yes": "Kyllä",
+    "no": "Ei",
+    "na": "—",
+    "verified": "Vahvistettu",
+    "recycled": "♻ Kierrätetty",
+    "days": "{n} päivä | {n} päivää",
+    "daysLeft": "{n} päivän päästä",
+    "noData": "Ei saatavilla olevia tietoja",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Digitaalinen tuotepassi. Yksinkertainen. Vaatimustenmukainen. Läpinäkyvä.",
+    "subline": "Yritysalusta EU-vaatimustenmukaisten tuotepassien hallintaan.",
+    "batteryReg": "EU:n akkuasetus"
+  }
+}

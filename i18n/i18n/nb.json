@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Oversikt",
+    "dashboard": "Dashbord",
+    "products": "Produkter",
+    "passports": "Produktpass",
+    "supplyChain": "Forsyningskjede",
+    "compliance": "Etterlevelse",
+    "regulations": "Regulering",
+    "reports": "Rapporter",
+    "system": "System",
+    "settings": "Innstillinger",
+    "logout": "Logg ut",
+    "openMenu": "Åpne navigasjon",
+    "closeMenu": "Lukk navigasjon",
+    "notifications": "Varsler"
+  },
+  "time": {
+    "justNow": "Akkurat nå",
+    "minutesAgo": "for {n} min siden",
+    "hoursAgo": "for {n} t siden",
+    "daysAgo": "for {n} dag(er) siden"
+  },
+  "notifications": {
+    "markAllRead": "Merk alle som lest",
+    "viewAll": "Se alle",
+    "empty": "Ingen varsler"
+  },
+  "auth": {
+    "login": "Logg inn",
+    "logout": "Logg ut",
+    "email": "E-postadresse",
+    "password": "Passord",
+    "forgotPassword": "Glemt?",
+    "loginError": "Feil e-post eller passord.",
+    "loggingIn": "Logger inn…",
+    "demoCredentials": "Demopåloggingsdetaljer",
+    "welcomeBack": "Velkommen tilbake",
+    "signInPrompt": "Logg inn på PassPort DPP-kontoen din.",
+    "emailPlaceholder": "navnEmailbedrift.no",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "products": {
+    "title": "Produktpass",
+    "subtitle": "{filtered} av {total} produkter",
+    "newPassport": "Nytt pass",
+    "export": "Eksporter",
+    "search": "Søk produkt eller SKU…",
+    "filters": {
+      "all": "Alle",
+      "ok": "Fullstendig",
+      "warn": "Ufullstendig",
+      "crit": "Kritisk",
+      "draft": "Utkast"
+    },
+    "status": {
+      "ok": "Fullstendig",
+      "warn": "Ufullstendig",
+      "crit": "Kritisk",
+      "draft": "Utkast"
+    },
+    "gaps": {
+      "open": "{n} åpen/åpne",
+      "none": "—",
+      "missing": "Mangler",
+      "outdated": "Utdatert",
+      "unverified": "Uverifisert"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Laster…",
+    "error": "Feil",
+    "save": "Lagre",
+    "cancel": "Avbryt",
+    "delete": "Slett",
+    "edit": "Rediger",
+    "close": "Lukk",
+    "back": "Tilbake",
+    "next": "Neste",
+    "confirm": "Bekreft",
+    "search": "Søk",
+    "filter": "Filtrer",
+    "export": "Eksporter",
+    "download": "Last ned",
+    "copy": "Kopier",
+    "copied": "Kopiert!",
+    "share": "Del",
+    "yes": "Ja",
+    "no": "Nei",
+    "na": "—",
+    "verified": "Verifisert",
+    "recycled": "♻ Resirkulert",
+    "days": "{n} dag | {n} dager",
+    "daysLeft": "om {n} dager",
+    "noData": "Ingen tilgjengelige data",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Digitalt produktpass. Enkelt. Regelrätt. Transparent.",
+    "subline": "Enterpriseplattformen for å administrere EU-konforme produktpass.",
+    "batteryReg": "EUs batteriforordning"
+  }
+}

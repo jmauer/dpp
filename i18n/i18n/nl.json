@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Overzicht",
+    "dashboard": "Dashboard",
+    "products": "Producten",
+    "passports": "Productpaspoorten",
+    "supplyChain": "Toeleveringsketen",
+    "compliance": "Naleving",
+    "regulations": "Regelgeving",
+    "reports": "Rapporten",
+    "system": "Systeem",
+    "settings": "Instellingen",
+    "logout": "Uitloggen",
+    "openMenu": "Navigatie openen",
+    "closeMenu": "Navigatie sluiten",
+    "notifications": "Meldingen"
+  },
+  "time": {
+    "justNow": "Zojuist",
+    "minutesAgo": "{n} min geleden",
+    "hoursAgo": "{n} uur geleden",
+    "daysAgo": "{n} dag(en) geleden"
+  },
+  "notifications": {
+    "markAllRead": "Alles als gelezen markeren",
+    "viewAll": "Alles bekijken",
+    "empty": "Geen meldingen"
+  },
+  "auth": {
+    "login": "Inloggen",
+    "logout": "Uitloggen",
+    "email": "E-mailadres",
+    "password": "Wachtwoord",
+    "forgotPassword": "Vergeten?",
+    "loginError": "Onjuist e-mailadres of wachtwoord.",
+    "loggingIn": "Inloggen…",
+    "demoCredentials": "Demoinloggegevens",
+    "welcomeBack": "Welkom terug",
+    "signInPrompt": "Log in op uw PassPort DPP-account.",
+    "emailPlaceholder": "naamEmailbedrijf.nl",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "products": {
+    "title": "Productpaspoorten",
+    "subtitle": "{filtered} van {total} producten",
+    "newPassport": "Nieuw paspoort",
+    "export": "Exporteren",
+    "search": "Zoek product of SKU…",
+    "filters": {
+      "all": "Alle",
+      "ok": "Volledig",
+      "warn": "Onvolledig",
+      "crit": "Kritiek",
+      "draft": "Concept"
+    },
+    "status": {
+      "ok": "Volledig",
+      "warn": "Onvolledig",
+      "crit": "Kritiek",
+      "draft": "Concept"
+    },
+    "gaps": {
+      "open": "{n} open",
+      "none": "—",
+      "missing": "Ontbreekt",
+      "outdated": "Verouderd",
+      "unverified": "Niet geverifieerd"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Laden…",
+    "error": "Fout",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "close": "Sluiten",
+    "back": "Terug",
+    "next": "Volgende",
+    "confirm": "Bevestigen",
+    "search": "Zoeken",
+    "filter": "Filteren",
+    "export": "Exporteren",
+    "download": "Downloaden",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd!",
+    "share": "Delen",
+    "yes": "Ja",
+    "no": "Nee",
+    "na": "—",
+    "verified": "Geverifieerd",
+    "recycled": "♻ Gerecycled",
+    "days": "{n} dag | {n} dagen",
+    "daysLeft": "over {n} dagen",
+    "noData": "Geen gegevens beschikbaar",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Digitaal Productpaspoort. Eenvoudig. Conform. Transparant.",
+    "subline": "Het enterprise platform voor het beheren van EU-conforme productpaspoorten.",
+    "batteryReg": "EU-batterijenverordening"
+  }
+}

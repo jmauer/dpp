@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Panoramica",
+    "dashboard": "Dashboard",
+    "products": "Prodotti",
+    "passports": "Passaporti prodotto",
+    "supplyChain": "Catena di fornitura",
+    "compliance": "Conformità",
+    "regulations": "Normativa",
+    "reports": "Rapporti",
+    "system": "Sistema",
+    "settings": "Impostazioni",
+    "logout": "Esci",
+    "openMenu": "Apri navigazione",
+    "closeMenu": "Chiudi navigazione",
+    "notifications": "Notifiche"
+  },
+  "time": {
+    "justNow": "Proprio ora",
+    "minutesAgo": "{n} min fa",
+    "hoursAgo": "{n} h fa",
+    "daysAgo": "{n} giorno/i fa"
+  },
+  "notifications": {
+    "markAllRead": "Segna tutto come letto",
+    "viewAll": "Vedi tutto",
+    "empty": "Nessuna notifica"
+  },
+  "auth": {
+    "login": "Accedi",
+    "logout": "Esci",
+    "email": "Indirizzo e-mail",
+    "password": "Password",
+    "forgotPassword": "Dimenticata?",
+    "loginError": "E-mail o password errati.",
+    "loggingIn": "Accesso in corso…",
+    "demoCredentials": "Credenziali demo",
+    "welcomeBack": "Bentornato",
+    "signInPrompt": "Accedi al tuo account PassPort DPP.",
+    "emailPlaceholder": "nomeEmailazienda.it",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "products": {
+    "title": "Passaporti prodotto",
+    "subtitle": "{filtered} di {total} prodotti",
+    "newPassport": "Nuovo passaporto",
+    "export": "Esporta",
+    "search": "Cerca prodotto o SKU…",
+    "filters": {
+      "all": "Tutti",
+      "ok": "Completo",
+      "warn": "Incompleto",
+      "crit": "Critico",
+      "draft": "Bozza"
+    },
+    "status": {
+      "ok": "Completo",
+      "warn": "Incompleto",
+      "crit": "Critico",
+      "draft": "Bozza"
+    },
+    "gaps": {
+      "open": "{n} aperto/i",
+      "none": "—",
+      "missing": "Mancante",
+      "outdated": "Obsoleto",
+      "unverified": "Non verificato"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Caricamento…",
+    "error": "Errore",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "close": "Chiudi",
+    "back": "Indietro",
+    "next": "Avanti",
+    "confirm": "Conferma",
+    "search": "Cerca",
+    "filter": "Filtra",
+    "export": "Esporta",
+    "download": "Scarica",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "share": "Condividi",
+    "yes": "Sì",
+    "no": "No",
+    "na": "—",
+    "verified": "Verificato",
+    "recycled": "♻ Riciclato",
+    "days": "{n} giorno | {n} giorni",
+    "daysLeft": "tra {n} giorni",
+    "noData": "Nessun dato disponibile",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Passaporto Prodotto Digitale. Semplice. Conforme. Trasparente.",
+    "subline": "La piattaforma enterprise per gestire passaporti prodotto conformi all'UE.",
+    "batteryReg": "Regolamento UE sulle batterie"
+  }
+}

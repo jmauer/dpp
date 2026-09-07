@@ -1,0 +1,358 @@
+{
+  "nav": {
+    "overview": "Pregled",
+    "dashboard": "Nadzorna ploča",
+    "products": "Products",
+    "passports": "Putovnice proizvoda",
+    "supplyChain": "Supply Chain",
+    "compliance": "Compliance",
+    "regulations": "Regulations",
+    "reports": "Reports",
+    "system": "System",
+    "settings": "Settings",
+    "logout": "Odjava",
+    "openMenu": "Open navigation",
+    "closeMenu": "Close navigation",
+    "notifications": "Notifications"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{n} min ago",
+    "hoursAgo": "{n} h ago",
+    "daysAgo": "{n} day(s) ago"
+  },
+  "notifications": {
+    "markAllRead": "Mark all read",
+    "viewAll": "View all",
+    "empty": "No notifications"
+  },
+  "auth": {
+    "login": "Prijava",
+    "logout": "Odjava",
+    "email": "Email address",
+    "password": "Password",
+    "forgotPassword": "Forgot?",
+    "loginError": "Incorrect email or password.",
+    "loggingIn": "Prijava…",
+    "demoCredentials": "Demo credentials",
+    "welcomeBack": "Welcome back",
+    "signInPrompt": "Sign in to your PassPort DPP account.",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "dashboard": {
+    "greeting": "Good morning, {name}",
+    "subtitle": "Your DPP overview for {date}",
+    "newPassport": "New DPP",
+    "exportReport": "Export report",
+    "kpi": {
+      "activePassports": "Active passports",
+      "complianceRate": "Compliance rate",
+      "openGaps": "Open gaps",
+      "suppliers": "Suppliers",
+      "thisMonth": "+{n} this month",
+      "vsLastMonth": "+{n} % vs last month",
+      "critical": "{n} critical",
+      "verified": "{n} % verified"
+    },
+    "sections": {
+      "passports": "Product passports",
+      "viewAll": "View all",
+      "regulations": "Regulations",
+      "details": "Details",
+      "supplyChain": "Supply chain",
+      "activities": "Recent activity"
+    }
+  },
+  "products": {
+    "title": "Product Passports",
+    "subtitle": "{filtered} of {total} products",
+    "newPassport": "New passport",
+    "export": "Export",
+    "search": "Search product or SKU…",
+    "filters": {
+      "all": "All",
+      "ok": "Complete",
+      "warn": "Incomplete",
+      "crit": "Critical",
+      "draft": "Draft"
+    },
+    "columns": {
+      "product": "Product",
+      "category": "Category",
+      "completeness": "Completeness",
+      "status": "Status",
+      "gaps": "Gaps",
+      "compliance": "Compliance"
+    },
+    "status": {
+      "ok": "Complete",
+      "warn": "Incomplete",
+      "crit": "Critical",
+      "draft": "Draft"
+    },
+    "gaps": {
+      "open": "{n} open",
+      "none": "—",
+      "missing": "Missing",
+      "outdated": "Outdated",
+      "unverified": "Unverified"
+    },
+    "detail": {
+      "back": "Product passports",
+      "publicView": "Public view",
+      "exportReport": "Export report",
+      "qrCode": "QR code",
+      "completeness": "DPP completeness",
+      "allComplete": "All required fields complete",
+      "openGaps": "{n} data gap open | {n} data gaps open",
+      "sections": {
+        "productInfo": "Product information",
+        "materials": "Material composition",
+        "gaps": "Open data gaps ({n})",
+        "regulations": "Regulations & compliance",
+        "supplyChain": "Supply chain",
+        "certifications": "Certifications"
+      },
+      "fields": {
+        "manufacturer": "Manufacturer",
+        "countryOfOrigin": "Country of origin",
+        "manufacturingDate": "Manufacturing date",
+        "weight": "Weight",
+        "energyClass": "Energy class",
+        "co2Total": "Total CO₂ footprint",
+        "repairability": "Repairability index",
+        "recyclingRate": "Recycling rate"
+      },
+      "qr": {
+        "title": "Public Product Passport",
+        "publicBadge": "Accessible without login",
+        "hint": "This QR code links to the public product passport – accessible without an account.",
+        "copyUrl": "Copy",
+        "copied": "Copied!",
+        "download": "Download QR",
+        "share": "Share"
+      }
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "supplyChain": {
+    "title": "Supply Chain",
+    "subtitle": "Transparency across all supply stages · {products} products · {suppliers} suppliers",
+    "addSupplier": "Add supplier",
+    "stages": {
+      "raw": "Raw materials",
+      "preproduction": "Pre-production",
+      "manufacturing": "Manufacturing",
+      "logistics": "Logistics",
+      "endoflife": "End of life"
+    },
+    "status": {
+      "ok": "Verified",
+      "warn": "Incomplete",
+      "neutral": "Not captured"
+    },
+    "fields": {
+      "supplier": "Supplier",
+      "country": "Country",
+      "co2": "CO₂",
+      "certifiedUntil": "Certified until",
+      "notCaptured": "Not captured"
+    },
+    "kpi": {
+      "totalSuppliers": "Total suppliers",
+      "supplyGaps": "Supply chain gaps",
+      "countries": "Countries",
+      "avgCo2": "Avg CO₂ per product",
+      "euShare": "EU share {n} %",
+      "critical": "{n} critical"
+    },
+    "allSuppliers": "All suppliers",
+    "filterAll": "All",
+    "filterVerified": "Verified",
+    "filterPending": "Pending",
+    "filterCritical": "Critical"
+  },
+  "compliance": {
+    "title": "Regulations & Compliance",
+    "subtitle": "Overview of all applicable EU regulations",
+    "overallScore": "Overall compliance score",
+    "nextDeadline": "Next deadline",
+    "regulations": "Regulations in detail",
+    "matrix": "Compliance matrix",
+    "matrixSub": "All products × all regulations",
+    "status": {
+      "ok": "Compliant",
+      "warn": "In progress",
+      "crit": "Critical",
+      "pending": "Pending",
+      "na": "N/A"
+    },
+    "expandProducts": "Status per product",
+    "nextDeadlineLabel": "Next deadline",
+    "legend": {
+      "ok": "Compliant",
+      "warn": "In progress",
+      "crit": "Critical",
+      "pending": "Pending",
+      "na": "Not applicable"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Exportable compliance and DPP reports",
+    "newReport": "New report",
+    "history": "Report history",
+    "scheduled": "Scheduled reports",
+    "stats": "Report statistics",
+    "status": {
+      "done": "Done",
+      "pending": "Generating",
+      "failed": "Error"
+    },
+    "frequency": {
+      "monthly": "Monthly",
+      "weekly": "Weekly",
+      "quarterly": "Quarterly"
+    },
+    "formats": {
+      "pdf": "PDF",
+      "json": "JSON",
+      "xlsx": "XLSX",
+      "csv": "CSV"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {
+      "account": "Account",
+      "dpp": "Digital Product Passport",
+      "system": "System"
+    },
+    "nav": {
+      "profile": "Profile & Security",
+      "company": "Company",
+      "dpp": "DPP Configuration",
+      "regulations": "Regulations",
+      "notifications": "Notifications",
+      "integrations": "Integrations & API",
+      "team": "Team & Roles"
+    },
+    "profile": {
+      "title": "Profile & Security",
+      "subtitle": "Personal data, password and sign-in security",
+      "personalData": "Personal data",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email address",
+      "role": "Role",
+      "language": "Language",
+      "saveChanges": "Save changes",
+      "saved": "✓ Saved",
+      "saving": "Saving…",
+      "password": {
+        "title": "Change password",
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Confirm password",
+        "mismatch": "Passwords do not match.",
+        "change": "Change password",
+        "strength": {
+          "weak": "Too weak",
+          "medium": "Medium",
+          "good": "Good",
+          "strong": "Strong"
+        }
+      },
+      "tfa": {
+        "title": "Two-factor authentication",
+        "active": "● Active",
+        "inactive": "○ Inactive",
+        "enable": "Enable 2FA",
+        "disable": "Disable 2FA",
+        "totp": "Authenticator app",
+        "sms": "SMS",
+        "emailMethod": "Email"
+      },
+      "sessions": {
+        "title": "Active sessions",
+        "current": "Current",
+        "revokeAll": "Sign out all",
+        "revoke": "Sign out"
+      },
+      "danger": {
+        "title": "Danger zone",
+        "deactivate": "Deactivate account",
+        "delete": "Delete account"
+      }
+    },
+    "dpp": {
+      "title": "DPP Configuration",
+      "subtitle": "System-wide parameters for the Digital Product Passport",
+      "thresholds": "Completeness thresholds",
+      "requiredFields": "Required DPP fields",
+      "addField": "+ Add field",
+      "qrSection": "QR Code & Public URL",
+      "autoGap": "Automatic gap detection",
+      "save": "Save",
+      "saved": "✓ Saved"
+    }
+  },
+  "public": {
+    "dppTitle": "Digital Product Passport",
+    "verifiedBy": "Verified · PassPort DPP Platform",
+    "shareTitle": "Share product passport",
+    "shareHint": "Scan this QR code to access the product passport directly.",
+    "whatIsDpp": "What is a Digital Product Passport?",
+    "dppExplained": "The Digital Product Passport (DPP) is an EU-wide instrument to increase product transparency along the entire value chain.",
+    "lastUpdated": "Last updated",
+    "dppId": "DPP ID",
+    "issuedBy": "Issued by",
+    "notFound": "Product passport not found"
+  },
+  "common": {
+    "loading": "Učitavanje…",
+    "error": "Greška",
+    "save": "Spremi",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "download": "Download",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "share": "Share",
+    "yes": "Yes",
+    "no": "No",
+    "na": "—",
+    "verified": "Verified",
+    "recycled": "♻ Recycled",
+    "days": "{n} day | {n} days",
+    "daysLeft": "in {n} days",
+    "noData": "No data available",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Digital Product Passport.\nSimple. Compliant. Transparent.",
+    "subline": "The enterprise platform for mid-size and large companies to manage EU-compliant product passports.",
+    "batteryReg": "EU Battery Regulation"
+  }
+}

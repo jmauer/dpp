@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------
+# Nuxt SPA (static) – Apache Konfiguration
+# Diese Datei liegt in public/ und wird von `nuxt generate` automatisch
+# nach .output/public/.htaccess kopiert.
+# ---------------------------------------------------------------------
+
+# --- SPA Fallback: alle unbekannten Routen an index.html -------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Vorhandene Dateien und Verzeichnisse direkt ausliefern
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Alles andere an die SPA-Shell (relativ = funktioniert auch im Unterverzeichnis)
+  RewriteRule . index.html [L]
+</IfModule>
+
+# --- MIME Types -------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType application/javascript          .js .mjs
+  AddType application/json                .json
+  AddType image/svg+xml                   .svg
+  AddType font/woff2                      .woff2
+  AddType font/woff                       .woff
+  AddType text/css                        .css
+  AddType image/webp                      .webp
+  AddType image/avif                      .avif
+</IfModule>
+
+# --- Kompression ------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE application/xml image/svg+xml
+</IfModule>
+
+# --- Caching ----------------------------------------------------------
+<IfModule mod_headers.c>
+  # Gehashte Build-Assets: unbegrenzt cachen
+  <FilesMatch "\.(js|mjs|css|woff2?|ttf|eot|svg|png|jpe?g|gif|webp|avif|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # HTML-Shell niemals cachen, sonst sehen User alte Builds
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Basis-Security-Header
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# --- Verzeichnis-Listing aus --------------------------------------------
+Options -Indexes

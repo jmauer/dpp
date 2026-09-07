@@ -1,0 +1,116 @@
+{
+  "nav": {
+    "overview": "Oversigt",
+    "dashboard": "Dashboard",
+    "products": "Produkter",
+    "passports": "Produktpas",
+    "supplyChain": "Forsyningskæde",
+    "compliance": "Overholdelse",
+    "regulations": "Regulering",
+    "reports": "Rapporter",
+    "system": "System",
+    "settings": "Indstillinger",
+    "logout": "Log ud",
+    "openMenu": "Åbn navigation",
+    "closeMenu": "Luk navigation",
+    "notifications": "Notifikationer"
+  },
+  "time": {
+    "justNow": "Lige nu",
+    "minutesAgo": "for {n} min siden",
+    "hoursAgo": "for {n} t siden",
+    "daysAgo": "for {n} dag(e) siden"
+  },
+  "notifications": {
+    "markAllRead": "Marker alle som læst",
+    "viewAll": "Se alle",
+    "empty": "Ingen notifikationer"
+  },
+  "auth": {
+    "login": "Log ind",
+    "logout": "Log ud",
+    "email": "E-mailadresse",
+    "password": "Adgangskode",
+    "forgotPassword": "Glemt?",
+    "loginError": "Forkert e-mail eller adgangskode.",
+    "loggingIn": "Logger ind…",
+    "demoCredentials": "Demooplysninger",
+    "welcomeBack": "Velkommen tilbage",
+    "signInPrompt": "Log ind på din PassPort DPP-konto.",
+    "emailPlaceholder": "navnEmailvirksomhed.dk",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "fillDemo": "Fill demo data",
+    "privacy": "Privacy",
+    "imprint": "Legal notice"
+  },
+  "products": {
+    "title": "Produktpas",
+    "subtitle": "{filtered} af {total} produkter",
+    "newPassport": "Nyt pas",
+    "export": "Eksporter",
+    "search": "Søg produkt eller SKU…",
+    "filters": {
+      "all": "Alle",
+      "ok": "Komplet",
+      "warn": "Ufuldstændig",
+      "crit": "Kritisk",
+      "draft": "Kladde"
+    },
+    "status": {
+      "ok": "Komplet",
+      "warn": "Ufuldstændig",
+      "crit": "Kritisk",
+      "draft": "Kladde"
+    },
+    "gaps": {
+      "open": "{n} åben/åbne",
+      "none": "—",
+      "missing": "Mangler",
+      "outdated": "Forældet",
+      "unverified": "Ikke verificeret"
+    },
+    "sort": {
+      "updated": "Last updated",
+      "name": "Name",
+      "completeness": "Completeness",
+      "gaps": "Open gaps",
+      "direction": "Sort direction"
+    }
+  },
+  "common": {
+    "loading": "Indlæser…",
+    "error": "Fejl",
+    "save": "Gem",
+    "cancel": "Annuller",
+    "delete": "Slet",
+    "edit": "Rediger",
+    "close": "Luk",
+    "back": "Tilbage",
+    "next": "Næste",
+    "confirm": "Bekræft",
+    "search": "Søg",
+    "filter": "Filtrer",
+    "export": "Eksporter",
+    "download": "Download",
+    "copy": "Kopier",
+    "copied": "Kopieret!",
+    "share": "Del",
+    "yes": "Ja",
+    "no": "Nej",
+    "na": "—",
+    "verified": "Verificeret",
+    "recycled": "♻ Genanvendt",
+    "days": "{n} dag | {n} dage",
+    "daysLeft": "om {n} dage",
+    "noData": "Ingen tilgængelige data",
+    "new": "New",
+    "resetFilters": "Reset filters"
+  },
+  "brand": {
+    "headline": "Digitalt Produktpas. Enkelt. Regelret. Transparent.",
+    "subline": "Enterprise-platformen til styring af EU-konforme produktpas.",
+    "batteryReg": "EU's batteriforordning"
+  }
+}
