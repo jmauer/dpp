@@ -147,3 +147,6 @@ Diese Punkte sind bewusst noch nicht umgesetzt, damit der Bestand weiterlaeuft:
   `setTwoFactor`) sind noch Attrappen mit `setTimeout`.
 - **`public/.htaccess`** stammt vom Apache-Setup und wird von Vercel ignoriert.
   Kann entfallen, sobald Apache nicht mehr genutzt wird.
+
+
+Test
