@@ -30,10 +30,19 @@
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="12" y="2" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="12" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M12 12h2v2h-2zM16 12v2M12 16h2M16 16v2M14 14h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           {{ t('products.qrCode') }}
         </button>
-        <a :href="publicUrl" target="_blank" class="btn-secondary-link">
+        <a
+          v-if="product.isPublic"
+          :href="publicUrl"
+          target="_blank"
+          class="btn-secondary-link"
+        >
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M11 3h6v6M17 3l-8 8M8 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {{ t('products.publicView') }}
         </a>
+        <span v-else class="btn-secondary-link is-disabled" title="Der Pass ist noch nicht freigegeben.">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 9V6.5a4 4 0 0 1 8 0V9M4 9h12v8H4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          Nicht freigegeben
+        </span>
         <button class="btn-primary">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 10v7h14v-7M10 3v10M7 10l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {{ t('products.exportReport') }}
@@ -147,6 +156,24 @@
           </div>
           <p class="qr-desc">Dieser QR-Code verlinkt direkt auf den öffentlichen Produktpass – lesbar von Kunden, Einkäufern und Behörden ohne Anmeldung.</p>
 
+          <!-- Freigabe: ohne sie liefert /p/<slug> ein 404 -->
+          <div class="publish-row" :class="{ 'is-live': product.isPublic }">
+            <div class="publish-text">
+              <strong>{{ product.isPublic ? 'Öffentlich erreichbar' : 'Noch nicht freigegeben' }}</strong>
+              <span>{{ product.isPublic
+                ? 'Jede Person mit dem Link kann den Pass aufrufen.'
+                : 'Der Pass ist nur intern sichtbar. Erst nach der Freigabe funktionieren Link und QR-Code.' }}</span>
+            </div>
+            <button
+              class="publish-btn"
+              :disabled="store.isSaving || !canWrite"
+              :title="canWrite ? '' : 'Dafür wird die Rolle Admin oder Manager benötigt.'"
+              @click="togglePublic"
+            >
+              {{ product.isPublic ? 'Zurückziehen' : 'Freigeben' }}
+            </button>
+          </div>
+
           <div class="qr-canvas-wrap">
             <canvas ref="qrCanvas" width="160" height="160" class="qr-canvas" />
             <div class="qr-logo-overlay">
@@ -257,6 +284,16 @@ const route = useRoute()
 const store = useProductsStore()
 const product = computed(() => store.getById(route.params.id as string))
 
+const auth     = useAuthStore()
+const canWrite = computed(() => auth.can('write'))
+
+/** Pass freigeben bzw. zurueckziehen – steuert is_public in der Datenbank. */
+async function togglePublic() {
+  const p = product.value
+  if (!p) return
+  await store.setPublic(p.id, !p.isPublic)
+}
+
 // Load the product pass from the API when the page opens
 onMounted(() => { store.fetchOne(route.params.id as string) })
 
@@ -330,6 +367,38 @@ async function shareUrl() {
 </script>
 
 <style scoped>
+/* Freigabe des oeffentlichen Passes */
+.publish-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin: 0 0 1rem;
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+.publish-row.is-live {
+  background: var(--color-ok-bg);
+  border-color: transparent;
+}
+.publish-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.publish-text strong { font-size: 13px; font-weight: 600; color: var(--color-text-1); }
+.publish-text span   { font-size: 12px; color: var(--color-text-2); }
+.publish-btn {
+  flex-shrink: 0;
+  padding: 7px 14px; border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-1);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+}
+.publish-btn:hover:not(:disabled) { background: var(--color-surface-2); }
+.publish-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary-link.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .detail-page { display: flex; flex-direction: column; gap: 16px; }
 
 /* Header */

@@ -454,6 +454,49 @@ export const useProductsStore = defineStore('products', () => {
     return msg
   }
 
+  /**
+   * Oeffentlichen Pass freigeben oder zurueckziehen.
+   *
+   * Ohne Freigabe liefert /p/<slug> ein 404, weil die View
+   * `public_product_passports` nur Zeilen mit is_public = true zeigt.
+   * Der Slug bleibt bei einem Rueckzug erhalten, ein spaeter erneut
+   * freigegebener Pass ist also unter derselben Adresse erreichbar.
+   */
+  async function setPublic(id: string, isPublic: boolean): Promise<boolean> {
+    isSaving.value = true
+    error.value    = null
+
+    const idx = _products.value.findIndex(p => p.id === id)
+    const prev = idx >= 0 ? { ..._products.value[idx] } as Product : null
+
+    if (prev) {
+      _products.value = _products.value.map(p =>
+        p.id === id ? { ...p, isPublic } : p)
+    }
+
+    try {
+      const { data, error: e } = await supabase
+        .from('products')
+        .update({ is_public: isPublic })
+        .eq('id', id)
+        .select(COLUMNS)
+        .single()
+
+      if (e) throw new Error(_friendlyWriteError(e.message))
+
+      const saved = rowToProduct(data as unknown as ProductRow)
+      _products.value = _products.value.map(p => p.id === id ? saved : p)
+      return true
+    } catch (e: any) {
+      if (prev) _products.value = _products.value.map(p => p.id === id ? prev : p)
+      error.value = e?.message ?? 'Sichtbarkeit konnte nicht geändert werden'
+      console.error('[ProductStore] setPublic:', e)
+      return false
+    } finally {
+      isSaving.value = false
+    }
+  }
+
   // ── Gap management ────────────────────────
 
   /** Mark a gap as resolved (optimistic, recalculates status) */
@@ -527,6 +570,7 @@ export const useProductsStore = defineStore('products', () => {
     create,
     update,
     remove,
+    setPublic,
     resolveGap,
     addGap,
     setFilter,
