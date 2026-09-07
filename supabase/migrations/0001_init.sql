@@ -19,23 +19,36 @@ create table if not exists public.companies (
 );
 
 -- ── Profile (1:1 zu auth.users, traegt Rolle + Mandant) ─────
-create type public.user_role as enum ('admin', 'manager', 'viewer');
+do $$ begin
+  create type public.user_role as enum ('admin', 'manager', 'viewer');
+exception when duplicate_object then null;
+end $$;
 
+-- Hinweis: In vielen Supabase-Projekten existiert bereits eine profiles-
+-- Tabelle (z.B. aus dem offiziellen Quickstart). 'create table if not exists'
+-- wuerde diese stillschweigend uebernehmen, sodass spaeter Spalten fehlen.
+-- Deshalb: Tabelle anlegen falls noetig, danach jede Spalte einzeln ergaenzen.
+-- Das ist nicht-destruktiv, vorhandene Daten bleiben erhalten.
 create table if not exists public.profiles (
-  id          uuid primary key references auth.users (id) on delete cascade,
-  company_id  uuid references public.companies (id) on delete set null,
-  email       text not null,
-  first_name  text not null default '',
-  last_name   text not null default '',
-  role        public.user_role not null default 'viewer',
-  language    text not null default 'de',
-  avatar_url  text,
-  created_at  timestamptz not null default now(),
-  last_login_at timestamptz
+  id uuid primary key references auth.users (id) on delete cascade
 );
 
+alter table public.profiles
+  add column if not exists company_id    uuid references public.companies (id) on delete set null,
+  add column if not exists email         text not null default '',
+  add column if not exists first_name    text not null default '',
+  add column if not exists last_name     text not null default '',
+  add column if not exists role          public.user_role not null default 'viewer',
+  add column if not exists language       text not null default 'de',
+  add column if not exists avatar_url    text,
+  add column if not exists created_at    timestamptz not null default now(),
+  add column if not exists last_login_at timestamptz;
+
 -- ── Produkte ────────────────────────────────────────────────
-create type public.product_status as enum ('ok', 'warn', 'crit', 'draft');
+do $$ begin
+  create type public.product_status as enum ('ok', 'warn', 'crit', 'draft');
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists public.products (
   id                  uuid primary key default gen_random_uuid(),
@@ -71,7 +84,10 @@ create table if not exists public.products (
   certifications      jsonb not null default '[]'::jsonb,
 
   -- oeffentlich per /p/<public_slug> abrufbar
-  public_slug         text unique default encode(gen_random_bytes(9), 'base64'),
+  -- base64url: '+' und '/' ersetzt, Padding entfaellt (9 Byte = 12 Zeichen).
+  -- Reines base64 wuerde '/' erzeugen und damit die Route /p/<slug> zerbrechen.
+  public_slug         text unique
+                        default translate(encode(gen_random_bytes(9), 'base64'), '+/=', '-_'),
   is_public           boolean not null default false,
 
   created_at          timestamptz not null default now(),
