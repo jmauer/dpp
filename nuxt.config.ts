@@ -23,10 +23,12 @@ export default defineNuxtConfig({
   ],
 
   supabase: {
-    // WICHTIG: Das Modul wuerde sonst jede Route auf /login umleiten und
-    // damit die bestehende API-Key-Auth aushebeln. Waehrend der parallelen
-    // Migration uebernimmt weiterhin app/middleware/auth.ts die Absicherung.
+    // Die Absicherung macht app/middleware/auth.ts - sie kennt die
+    // oeffentlichen Routen (/login, /p/*) und den Rueckkehrpfad.
     redirect: false,
+    // Keine generierten Typen: das Schema steht in app/types/database.ts
+    // und wird an useSupabaseClient<Database>() uebergeben.
+    types: false,
   },
 
   googleFonts: {

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { Database, ProductRow } from '~/types/database'
 
 // ─────────────────────────────────────────────
 // Types
@@ -67,12 +68,16 @@ export interface Product {
   regulations:        Regulation[]
   supplyChain:        SupplyStep[]
   certifications:     string[]
+  /** Kennung fuer den oeffentlichen Pass unter /p/<slug>; von der DB vergeben. */
+  publicSlug:         string | null
+  /** Steuert, ob der Pass ohne Login abrufbar ist. */
+  isPublic:           boolean
   createdAt:          string       // ISO date string
   updatedAt:          string       // ISO date string
 }
 
 // Partial used when creating/updating a product
-export type ProductDraft = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'statusLabel' | 'completeness'>
+export type ProductDraft = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'statusLabel' | 'completeness' | 'publicSlug' | 'isPublic'>
 
 export interface ProductFilter {
   search:   string
@@ -97,7 +102,7 @@ function isDataPresent(val: string | undefined | null): boolean {
  * Derive status + completeness from the product's current data.
  * Keeps UI consistent without having to manually set these fields.
  */
-function deriveStatus(product: Omit<Product, 'status' | 'statusLabel' | 'completeness'>): Pick<Product, 'status' | 'statusLabel' | 'completeness'> {
+function deriveStatus(product: Omit<Product, 'status' | 'statusLabel' | 'completeness'> & { completeness?: number }): Pick<Product, 'status' | 'statusLabel' | 'completeness'> {
   const criticalGaps = product.gaps.filter(g => !g.resolvedAt && (g.type === 'missing' || (g.deadline && new Date(g.deadline) < new Date()))).length
   const totalGaps    = product.gaps.filter(g => !g.resolvedAt).length
   const pct          = product.completeness ?? 100    // keep caller-provided value if present
@@ -132,6 +137,18 @@ function generateId(name: string): string {
 // ─────────────────────────────────────────────
 
 export const useProductsStore = defineStore('products', () => {
+
+  const supabase = useSupabaseClient<Database>()
+
+  /** Nur die Spalten der Tabelle - kein `select('*')`, damit ein
+   *  Schema-Zusatz nicht unbemerkt in die App durchschlaegt. */
+  const COLUMNS = `
+    id, company_id, name, sku, category, emoji, icon_bg, icon_color,
+    status, completeness, description, manufacturer, manufacturing_date,
+    country_of_origin, weight, co2_total, energy_class, repairability_index,
+    recycling_rate, materials, regulations, supply_chain, gaps,
+    certifications, public_slug, is_public, created_at, updated_at
+  `
 
   // ── State ─────────────────────────────────
   const _products   = ref<Product[]>([])
@@ -260,9 +277,14 @@ export const useProductsStore = defineStore('products', () => {
     isLoading.value = true
     error.value     = null
     try {
-      const { apiFetch } = useApi()
-      const data = await apiFetch<Product[]>('/getAllProducts')
-      _products.value = Array.isArray(data) ? data : []
+      // RLS filtert bereits auf den eigenen Mandanten - kein company_id-Filter noetig.
+      const { data, error: e } = await supabase
+        .from('products')
+        .select(COLUMNS)
+        .order('updated_at', { ascending: false })
+
+      if (e) throw new Error(e.message)
+      _products.value   = (data ?? []).map(r => rowToProduct(r as unknown as ProductRow))
       lastFetched.value = now()
     } catch (e: any) {
       error.value = e?.message ?? 'Fehler beim Laden der Produkte'
@@ -279,13 +301,18 @@ export const useProductsStore = defineStore('products', () => {
     isLoading.value = true
     error.value     = null
     try {
-      const { apiFetch } = useApi()
-      const data = await apiFetch<Product | null>(`/getProduct/${id}`)
-      if (data && typeof data === 'object' && data.id) {
-        _merge(data)
-        return data
-      }
-      return null
+      const { data, error: e } = await supabase
+        .from('products')
+        .select(COLUMNS)
+        .eq('id', id)
+        .maybeSingle()
+
+      if (e) throw new Error(e.message)
+      if (!data) return null
+
+      const product = rowToProduct(data as unknown as ProductRow)
+      _merge(product)
+      return product
     } catch (e: any) {
       error.value = e?.message ?? 'Fehler beim Laden des Produkts'
       console.error('[ProductStore] fetchOne:', e)
@@ -303,36 +330,40 @@ export const useProductsStore = defineStore('products', () => {
     isSaving.value = true
     error.value    = null
 
-    const tempId   = generateId(draft.name)
-    const ts       = now()
-    const derived  = deriveStatus({ ...draft, id: tempId, createdAt: ts, updatedAt: ts, completeness: draft.completeness ?? 0 } as any)
-    const newProduct: Product = {
-      ...draft,
-      id:          tempId,
-      createdAt:   ts,
-      updatedAt:   ts,
-      ...derived,
+    const auth = useAuthStore()
+    const companyId = auth.companyId
+    if (!companyId) {
+      error.value = 'Kein Unternehmen zugeordnet - Produkt kann nicht angelegt werden.'
+      isSaving.value = false
+      return null
     }
 
-    // Optimistic insert
-    _products.value = [newProduct, ..._products.value]
+    // Status/Vollstaendigkeit werden aus den Daten abgeleitet und mitgespeichert,
+    // damit auch die oeffentliche View sie ohne Neuberechnung anzeigen kann.
+    const ts      = now()
+    const derived = deriveStatus({
+      ...draft, id: '', createdAt: ts, updatedAt: ts,
+      completeness: draft.completeness ?? 0,
+    } as any)
 
     try {
-      const { apiFetch } = useApi()
-      const saved = await apiFetch<Product | null>('/createProduct', {
-        method: 'POST',
-        body:   newProduct,
-      })
-      // Replace the optimistic entry with the server response if it returns one.
-      if (saved && typeof saved === 'object' && saved.id) {
-        _products.value = _products.value.map(p => p.id === tempId ? saved : p)
-        return saved
-      }
-      return newProduct
+      const { data, error: e } = await supabase
+        .from('products')
+        .insert({
+          ...productToRow({ ...draft, ...derived, isPublic: false } as Partial<Product>),
+          company_id: companyId,
+        })
+        .select(COLUMNS)
+        .single()
+
+      if (e) throw new Error(_friendlyWriteError(e.message))
+
+      const saved = rowToProduct(data as unknown as ProductRow)
+      _products.value = [saved, ..._products.value]
+      return saved
     } catch (e: any) {
-      // Roll back
-      _products.value = _products.value.filter(p => p.id !== tempId)
       error.value = e?.message ?? 'Fehler beim Erstellen des Produkts'
+      console.error('[ProductStore] create:', e)
       return null
     } finally {
       isSaving.value = false
@@ -350,28 +381,30 @@ export const useProductsStore = defineStore('products', () => {
     const idx = _products.value.findIndex(p => p.id === id)
     if (idx === -1) { isSaving.value = false; return null }
 
-    const prev    = { ..._products.value[idx] }
-    const updated: Product = {
-      ...prev,
-      ...patch,
-      id,
-      updatedAt: now(),
-    }
-    // Re-derive status if completeness or gaps changed
-    const derived = deriveStatus(updated)
-    Object.assign(updated, derived)
+    const prev = { ..._products.value[idx] } as Product
+    const updated: Product = { ...prev, ...patch, id, updatedAt: now() }
+    Object.assign(updated, deriveStatus(updated))
 
-    // Optimistic update
+    // Optimistisch anzeigen, bei Fehler zuruecknehmen
     _products.value = _products.value.map(p => p.id === id ? updated : p)
 
     try {
-      // await $fetch(`/api/products/${id}`, { method: 'PATCH', body: patch })
-      await new Promise(r => setTimeout(r, 400))
-      return updated
+      const { data, error: e } = await supabase
+        .from('products')
+        .update(productToRow(updated))
+        .eq('id', id)
+        .select(COLUMNS)
+        .single()
+
+      if (e) throw new Error(_friendlyWriteError(e.message))
+
+      const saved = rowToProduct(data as unknown as ProductRow)
+      _products.value = _products.value.map(p => p.id === id ? saved : p)
+      return saved
     } catch (e: any) {
-      // Roll back
       _products.value = _products.value.map(p => p.id === id ? prev : p)
       error.value = e?.message ?? 'Fehler beim Speichern'
+      console.error('[ProductStore] update:', e)
       return null
     } finally {
       isSaving.value = false
@@ -389,16 +422,36 @@ export const useProductsStore = defineStore('products', () => {
     _products.value = _products.value.filter(p => p.id !== id)
 
     try {
-      // await $fetch(`/api/products/${id}`, { method: 'DELETE' })
-      await new Promise(r => setTimeout(r, 350))
+      const { error: e } = await supabase.from('products').delete().eq('id', id)
+      if (e) throw new Error(_friendlyWriteError(e.message))
       return true
     } catch (e: any) {
       _products.value = prev
       error.value = e?.message ?? 'Fehler beim Löschen'
+      console.error('[ProductStore] remove:', e)
       return false
     } finally {
       isSaving.value = false
     }
+  }
+
+  /**
+   * Postgres-Meldungen in verstaendliche Hinweise uebersetzen.
+   * Ein RLS-Verstoss kommt als kryptische Policy-Meldung zurueck und
+   * bedeutet in der Praxis fast immer: fehlende Berechtigung.
+   */
+  function _friendlyWriteError(msg: string): string {
+    const m = msg.toLowerCase()
+    if (m.includes('row-level security') || m.includes('violates row-level')) {
+      return 'Keine Berechtigung für diese Aktion. Dafür wird die Rolle Admin oder Manager benötigt.'
+    }
+    if (m.includes('products_company_sku_key') || m.includes('duplicate key')) {
+      return 'Diese Artikelnummer (SKU) ist bereits vergeben.'
+    }
+    if (m.includes('invalid input syntax for type date')) {
+      return 'Das Herstellungsdatum hat ein ungültiges Format.'
+    }
+    return msg
   }
 
   // ── Gap management ────────────────────────

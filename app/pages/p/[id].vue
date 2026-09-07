@@ -250,27 +250,71 @@
 
 <script setup lang="ts">
 import QRCode from 'qrcode'
+import type { Database, PublicPassportRow } from '~/types/database'
 
 definePageMeta({ layout: 'public' })
 
-const route = useRoute()
-const store = useProductsStore()
-const product = computed(() => store.getById(route.params.id as string))
+const route    = useRoute()
+const supabase = useSupabaseClient<Database>()
 
-const currentUrl = ref('')
+/**
+ * Der Routenparameter ist der `public_slug` aus der Datenbank.
+ * Gelesen wird die View `public_product_passports` - sie zeigt nur
+ * freigegebene Produkte und blendet interne Felder (Mandant, Lueckenliste)
+ * aus. Dadurch ist die Seite ohne Login abrufbar.
+ *
+ * useAsyncData statt onMounted: so wird der Pass serverseitig gerendert
+ * und ist fuer Suchmaschinen und Link-Vorschauen sichtbar.
+ */
+const slug = computed(() => String(route.params.id ?? ''))
+
+const { data: product } = await useAsyncData(
+  () => `passport-${slug.value}`,
+  async () => {
+    const { data, error } = await supabase
+      .from('public_product_passports')
+      .select('*')
+      .eq('public_slug', slug.value)
+      .maybeSingle()
+
+    if (error) {
+      console.error('[Passport] Laden fehlgeschlagen:', error.message)
+      return null
+    }
+    return data ? publicRowToProduct(data as unknown as PublicPassportRow) : null
+  },
+  { watch: [slug] },
+)
+
+// Nicht gefundene Paesse sollen auch wirklich 404 liefern, nicht 200.
+if (import.meta.server && !product.value) {
+  const event = useRequestEvent()
+  if (event) setResponseStatus(event, 404)
+}
+
+// SSR-sicher: useRequestURL kennt die Adresse auch ohne window.
+const currentUrl = computed(() => new URL(`/p/${slug.value}`, useRequestURL().origin).toString())
+
+useHead(() => ({
+  title: product.value ? `${product.value.name} – Digitaler Produktpass` : 'Produktpass nicht gefunden',
+  meta: product.value
+    ? [
+        { name: 'description', content: product.value.description },
+        { property: 'og:title', content: `${product.value.name} – Digitaler Produktpass` },
+        { property: 'og:description', content: product.value.description },
+        { property: 'og:url', content: currentUrl.value },
+      ]
+    : [{ name: 'robots', content: 'noindex' }],
+}))
+
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
-const copied = ref(false)
+const copied   = ref(false)
 
-onMounted(() => {
-  currentUrl.value = window.location.href
-  store.fetchOne(route.params.id as string)
-  renderQr()
-})
-
+onMounted(() => renderQr())
 watch(qrCanvas, () => renderQr())
 
 async function renderQr() {
-  if (!qrCanvas.value || !currentUrl.value) return
+  if (!qrCanvas.value) return
   await QRCode.toCanvas(qrCanvas.value, currentUrl.value, {
     width: 200,
     margin: 1,
@@ -280,6 +324,7 @@ async function renderQr() {
 }
 
 function formatDate(d: string) {
+  if (!d) return '—'
   return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 

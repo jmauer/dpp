@@ -262,8 +262,10 @@ onMounted(() => { store.fetchOne(route.params.id as string) })
 
 // Public URL for this product
 const config = useRuntimeConfig()
+// Der oeffentliche Pass wird ueber den von der DB vergebenen Slug
+// adressiert, nicht ueber die Produkt-ID - die bleibt intern.
 const publicUrl = computed(() =>
-  `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${product.value?.id}`
+  `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${product.value?.publicSlug ?? ''}`
 )
 
 // QR refs

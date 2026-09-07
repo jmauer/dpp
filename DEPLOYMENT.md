@@ -51,9 +51,14 @@ git check-ignore -v .env    # muss eine Zeile aus .gitignore ausgeben
    anlegen. **Region:** `eu-central-1 (Frankfurt)` – gleiche Region wie die
    Vercel-Funktionen, spart Latenz und haelt die Daten in der EU.
 2. Datenbank-Passwort sicher ablegen.
-3. Schema einspielen – Dashboard → **SQL Editor** → Inhalt von
-   [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql)
-   einfuegen und ausfuehren.
+3. Schema einspielen – Dashboard → **SQL Editor** → die Migrationen der Reihe
+   nach ausfuehren:
+   - [0001_init.sql](supabase/migrations/0001_init.sql) – Tabellen, RLS, oeffentliche View
+   - [0002_public_view.sql](supabase/migrations/0002_public_view.sql) – Status-Felder in der View
+   - [0003_profiles_personal_number.sql](supabase/migrations/0003_profiles_personal_number.sql) – Personalnummer
+
+   Danach optional [supabase/seed.sql](supabase/seed.sql) fuer Beispieldaten
+   (E-Mail darin vorher anpassen).
 
    Alternativ mit der CLI:
 
@@ -113,8 +118,14 @@ node .output/server/index.mjs      # http://localhost:3000
    | ---------------------- | ----------------------------------- | -------------------------------- |
    | `SUPABASE_URL`         | `https://<ref>.supabase.co`         | aus Schritt 2                    |
    | `SUPABASE_KEY`         | `<anon public key>`                 | aus Schritt 2                    |
-   | `LEGACY_API_BASE`      | `http://116.203.22.63:5005`         | nur serverseitig genutzt         |
+   | `SUPABASE_SERVICE_KEY` | `<service_role key>`                | **nur Server**, siehe unten      |
+   | `LEGACY_API_BASE`      | `http://116.203.22.63:5005`         | nur noch fuer Restbestaende      |
    | `NUXT_PUBLIC_API_BASE` | `/api/legacy`                       | nicht auf die http-URL aendern   |
+
+   `SUPABASE_SERVICE_KEY` wird ausschliesslich von
+   [server/api/team/invite.post.ts](server/api/team/invite.post.ts) benutzt, um
+   Benutzer anzulegen - das geht nur ueber die Admin-API. Der Schluessel umgeht
+   saemtliche RLS-Policies und darf **niemals** als `NUXT_PUBLIC_*` gesetzt werden.
 
    `NUXT_APP_BASE_URL` wird auf Vercel **nicht** gesetzt (Default `/`).
 
@@ -127,26 +138,37 @@ node .output/server/index.mjs      # http://localhost:3000
 
 ---
 
-## 5. Offene Punkte fuer die Migration
+## 5. Stand der Migration
 
-Diese Punkte sind bewusst noch nicht umgesetzt, damit der Bestand weiterlaeuft:
+Erledigt:
 
-- **Auth liegt weiterhin im `localStorage`** ([app/stores/auth.ts](app/stores/auth.ts)).
-  Deshalb kann die Route-Middleware serverseitig nicht pruefen; den ersten
-  Seitenaufruf sichert [app/plugins/auth-guard.client.ts](app/plugins/auth-guard.client.ts)
-  ab. Beim Umstieg auf Supabase Auth wandert die Session in ein Cookie und die
-  Pruefung kann zurueck in die SSR-Middleware – dann entfaellt das Plugin und
-  das kurze Aufblitzen geschuetzter Seiten.
-- **`@nuxtjs/supabase` laeuft mit `redirect: false`** ([nuxt.config.ts](nuxt.config.ts)).
-  Sonst wuerde das Modul jede Route auf `/login` umleiten und die bestehende
-  API-Key-Auth aushebeln. Erst umstellen, wenn Supabase Auth uebernimmt.
-- **Die oeffentliche Seite `/p/[id]`** laedt ihre Daten in `onMounted`, also
-  weiterhin clientseitig. Fuer echtes SEO muss das auf `useAsyncData` gegen die
-  View `public_product_passports` umgestellt werden.
-- **Store-Actions mit `// TODO: real API`** (`updateProfile`, `changePassword`,
-  `setTwoFactor`) sind noch Attrappen mit `setTimeout`.
+- **Auth laeuft ueber Supabase Auth.** Die Session liegt in einem Cookie und ist
+  serverseitig lesbar, deshalb prueft [app/middleware/auth.ts](app/middleware/auth.ts)
+  wieder beim SSR. Das fruehere Client-Guard-Plugin ist entfallen - geschuetzte
+  Seiten blitzen nicht mehr kurz auf.
+- **Produkte kommen aus Postgres.** `fetchAll`, `fetchOne`, `create`, `update`
+  und `remove` in [app/stores/products.ts](app/stores/products.ts) sprechen die
+  Tabelle direkt an; RLS filtert den Mandanten, ein `company_id`-Filter im Code
+  ist nicht noetig. Die Uebersetzung snake_case ↔ camelCase steht in
+  [app/utils/product-mapper.ts](app/utils/product-mapper.ts).
+- **Der oeffentliche Pass wird serverseitig gerendert.**
+  [app/pages/p/[id].vue](app/pages/p/%5Bid%5D.vue) liest per `useAsyncData` aus der
+  View `public_product_passports` und liefert bei unbekanntem Slug echtes 404.
+  Adressiert wird ueber `public_slug`, nicht mehr ueber die Produkt-ID.
+- **Team-Verwaltung.** Liste aus `profiles`; das Anlegen laeuft ueber
+  [server/api/team/invite.post.ts](server/api/team/invite.post.ts), weil dafuer
+  der service_role-Key noetig ist. Die Route prueft, dass der Aufrufer Admin ist.
+
+Noch offen:
+
+- **Zwei-Faktor-Authentifizierung** (`setTwoFactor`) ist nicht angebunden.
+  Supabase kann MFA/TOTP, es fehlt der Enrollment-Dialog mit QR-Code.
+- **Die Legacy-API und ihr Proxy** werden von der App nicht mehr aufgerufen.
+  [server/api/legacy/[...path].ts](server/api/legacy/%5B...path%5D.ts) und
+  `LEGACY_API_BASE` koennen entfallen, sobald sicher ist, dass nichts mehr
+  daran haengt.
+- **Vorbestehende Typfehler** in `settings/dpp.vue`, `supply-chain.vue`,
+  `settings/notifications.vue`, `LanguageSwitcher.vue`, `stores/notifications.ts`
+  und der i18n-Option `lazy` - unabhaengig von der Migration, `nuxi typecheck`
+  listet sie auf.
 - **`public/.htaccess`** stammt vom Apache-Setup und wird von Vercel ignoriert.
-  Kann entfallen, sobald Apache nicht mehr genutzt wird.
-
-
-Test

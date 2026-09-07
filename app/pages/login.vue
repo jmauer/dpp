@@ -57,8 +57,7 @@
       </form>
 
       <div class="demo-hint">
-        <strong>Demo-Zugangsdaten:</strong><br>
-        <code>demo@passport-dpp.de</code> / <code>Demo12!</code>
+        Zugangsdaten erhalten Sie von Ihrer Administration.
       </div>
     </div>
   </div>
