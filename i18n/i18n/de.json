@@ -145,7 +145,26 @@
       "completeness": "Vollständigkeit",
       "gaps": "Offene Lücken",
       "direction": "Sortierrichtung"
-    }
+    },
+    "allComplete": "Alle Pflichtfelder vollständig",
+    "backToOverview": "Zurück zur Übersicht",
+    "completeness": "DPP-Vollständigkeit",
+    "copied": "Kopiert!",
+    "copyUrl": "Kopieren",
+    "exportReport": "Bericht exportieren",
+    "fixAllGaps": "Alle Lücken schließen",
+    "gapMissing": "Fehlt",
+    "gapOutdated": "Veraltet",
+    "gapUnverified": "Nicht verifiziert",
+    "materials": "Materialzusammensetzung",
+    "noMaterialData": "Keine Materialdaten hinterlegt",
+    "notFound": "Produktpass nicht gefunden",
+    "openGaps": "{count} Datenlücke offen | {count} Datenlücken offen",
+    "productInfo": "Produktinformationen",
+    "publicView": "Öffentliche Ansicht",
+    "qrCode": "QR-Code",
+    "qrDownload": "QR herunterladen",
+    "qrShare": "Teilen"
   },
   "supplyChain": {
     "title": "Lieferkette",
@@ -184,7 +203,10 @@
     "filterPending": "Ausstehend",
     "filterCritical": "Kritisch",
     "searchProducts": "Produkte suchen…",
-    "selectProduct": "Produkt auswählen"
+    "selectProduct": "Produkt auswählen",
+    "incompleteWarning": "Für diese Lieferstufe fehlen Angaben.",
+    "productsShown": "Produkte angezeigt",
+    "selectPrompt": "Wählen Sie ein Produkt, um dessen Lieferkette anzuzeigen."
   },
   "compliance": {
     "title": "Regulatorik & Compliance",
@@ -296,8 +318,12 @@
       "danger": {
         "title": "Gefahrenzone",
         "deactivate": "Konto deaktivieren",
-        "delete": "Konto löschen"
-      }
+        "delete": "Konto löschen",
+        "deactivateDesc": "Ihr Konto wird gesperrt. Ein Administrator kann es reaktivieren.",
+        "deleteDesc": "Alle Ihre Daten werden dauerhaft und unwiderruflich gelöscht."
+      },
+      "uploadPhoto": "Bild hochladen",
+      "emailHint": "Nach Änderung erhalten Sie eine Bestätigungs-E-Mail."
     },
     "dpp": {
       "title": "DPP-Konfiguration",
@@ -350,7 +376,8 @@
     "daysLeft": "in {n} Tagen",
     "noData": "Keine Daten vorhanden",
     "new": "Neu",
-    "resetFilters": "Filter zurücksetzen"
+    "resetFilters": "Filter zurücksetzen",
+    "status": "Status"
   },
   "brand": {
     "headline": "Digitaler Produktpass.\nEinfach. Compliant. Transparent.",

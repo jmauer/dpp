@@ -9,7 +9,7 @@
     </div>
 
     <!-- Quick export -->
-    <div class="quick-exports">
+    <div ref="quickExportsEl" class="quick-exports">
       <div
         v-for="r in quickReports"
         :key="r.title"
@@ -19,9 +19,9 @@
         <div class="qc-icon">{{ r.icon }}</div>
         <div class="qc-body">
           <div class="qc-title">{{ r.title }}</div>
-          <div class="qc-sub">{{ r.sub }}</div>
+          <div class="qc-sub">{{ r.sub() }}</div>
         </div>
-        <button class="qc-btn" @click="simulateExport(r.title)">
+        <button class="qc-btn" :disabled="busy === r.key" @click="runReport(r)">
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M3 14v3h14v-3M10 3v10M7 10l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {{ r.format }}
         </button>
@@ -34,12 +34,15 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">Berichtsverlauf</h2>
-          <button class="btn-secondary sm">
+          <button class="btn-secondary sm" @click="scrollToQuickExports">
             <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             Neuer Bericht
           </button>
         </div>
         <div class="report-list">
+          <div v-if="!reportHistory.length" class="rep-empty">
+            Noch kein Bericht erzeugt. Wählen Sie oben einen Bericht aus.
+          </div>
           <div
             v-for="rep in reportHistory"
             :key="rep.id"
@@ -53,7 +56,12 @@
             <span class="rep-status" :class="`rs-${rep.status}`">
               <span class="rs-dot" />{{ repStatusLabel(rep.status) }}
             </span>
-            <button class="rep-dl" title="Herunterladen">
+            <button
+              class="rep-dl"
+              :disabled="!rep.payload"
+              :title="rep.payload ? 'Herunterladen' : 'Nur in der Sitzung erzeugte Berichte lassen sich erneut laden'"
+              @click="downloadReport(rep)"
+            >
               <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 14v3h14v-3M10 3v10M7 10l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
@@ -78,7 +86,7 @@
               <div class="sched-right">
                 <div class="sched-next">{{ s.next }}</div>
                 <label class="toggle">
-                  <input type="checkbox" :checked="s.active" />
+                  <input type="checkbox" v-model="s.active" />
                   <span class="toggle-track" />
                 </label>
               </div>
@@ -91,20 +99,20 @@
           <div class="card-header"><h2 class="card-title">Berichts-Statistik</h2></div>
           <div class="stat-grid">
             <div class="stat-item">
-              <div class="stat-val">47</div>
+              <div class="stat-val">{{ reportStats.generated }}</div>
               <div class="stat-label">Berichte erstellt</div>
             </div>
             <div class="stat-item">
-              <div class="stat-val">12</div>
-              <div class="stat-label">Diesen Monat</div>
+              <div class="stat-val">{{ reportStats.thisMonth }}</div>
+              <div class="stat-label">Heute</div>
             </div>
             <div class="stat-item">
-              <div class="stat-val">3</div>
-              <div class="stat-label">Behörden-Einreichungen</div>
+              <div class="stat-val">{{ reportStats.products }}</div>
+              <div class="stat-label">Erfasste Produkte</div>
             </div>
             <div class="stat-item">
-              <div class="stat-val">189 MB</div>
-              <div class="stat-label">Gespeichertes Volumen</div>
+              <div class="stat-val">{{ reportStats.volume }}</div>
+              <div class="stat-label">Erzeugtes Volumen</div>
             </div>
           </div>
         </div>
@@ -115,7 +123,7 @@
     <Teleport to="body">
       <div v-if="exportToast" class="toast">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        „{{ exportToast }}" wird generiert…
+        „{{ exportToast }}" wurde heruntergeladen.
       </div>
     </Teleport>
 
@@ -123,41 +131,241 @@
 </template>
 
 <script setup lang="ts">
+import { downloadFile, exportJson, toCsv, dateStamp, safeFilename, type CsvColumn } from '~/utils/export'
+import type { Product } from '~/stores/products'
+
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
-const exportToast = ref<string | null>(null)
+const store    = useProductsStore()
+const settings = useSettingsStore()
 
-function simulateExport(title: string) {
+onMounted(() => {
+  store.fetchAll()
+  settings.fetchAll()
+})
+
+const exportToast   = ref<string | null>(null)
+const busy          = ref<string | null>(null)
+const quickExportsEl = ref<HTMLElement | null>(null)
+
+function toast(title: string) {
   exportToast.value = title
-  setTimeout(() => { exportToast.value = null }, 3000)
+  setTimeout(() => { if (exportToast.value === title) exportToast.value = null }, 3000)
+}
+
+function scrollToQuickExports() {
+  quickExportsEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function repStatusLabel(s: string) {
   return { done: 'Fertig', pending: 'In Erstellung', failed: 'Fehler' }[s] ?? s
 }
 
+const openGaps = (p: Product) => p.gaps.filter(g => !g.resolvedAt)
+
+// ─────────────────────────────────────────────
+// Berichtsdefinitionen
+//
+// Jeder Bericht liefert seinen fertigen Inhalt zurueck. Damit landet er
+// sowohl im Download als auch im Verlauf – von dort laesst er sich erneut
+// laden, ohne ihn neu berechnen zu muessen.
+// ─────────────────────────────────────────────
+
+interface ReportOutput {
+  content:  string
+  mime:     string
+  filename: string
+}
+
+function csvReport(basename: string, rows: any[], columns: CsvColumn<any>[]): ReportOutput {
+  return {
+    content:  toCsv(rows, columns),
+    mime:     'text/csv;charset=utf-8',
+    filename: `${safeFilename(basename)}-${dateStamp()}.csv`,
+  }
+}
+
 const quickReports = [
-  { title: 'EU ESPR Compliance-Bericht', sub: 'Alle Produkte · Q2 2026', icon: '🛡️', color: 'green', format: 'PDF' },
-  { title: 'DPP-Gesamtexport', sub: '5 Produkte · JSON/XML', icon: '📦', color: 'blue', format: 'JSON' },
-  { title: 'CO₂-Bilanz Bericht', sub: 'Lieferketten-Emissionen', icon: '🌱', color: 'teal', format: 'XLSX' },
-  { title: 'Lieferanten-Audit', sub: 'LkSG-konform · alle Stufen', icon: '🔗', color: 'amber', format: 'PDF' },
+  {
+    key: 'espr', title: 'EU ESPR Compliance-Bericht', icon: '🛡️', color: 'green', format: 'CSV', type: 'green',
+    sub: () => `${store.products.length} Produkte · Stand heute`,
+    build: (): ReportOutput => csvReport('ESPR-Compliance', store.products, [
+      { header: 'SKU',                 value: (p: Product) => p.sku },
+      { header: 'Produkt',             value: (p: Product) => p.name },
+      { header: 'Status',              value: (p: Product) => p.statusLabel },
+      { header: 'Vollständigkeit (%)', value: (p: Product) => p.completeness },
+      { header: 'Offene Lücken',       value: (p: Product) => openGaps(p).length },
+      { header: 'ESPR-Status',         value: (p: Product) => p.regulations.find(r => /ESPR/i.test(r.name))?.status ?? 'n/a' },
+      { header: 'Reparierbarkeit',     value: (p: Product) => p.repairabilityIndex || '' },
+      { header: 'Recyclingquote',      value: (p: Product) => p.recyclingRate },
+      { header: 'CO2 gesamt',          value: (p: Product) => p.co2Total },
+    ]),
+  },
+  {
+    key: 'full', title: 'DPP-Gesamtexport', icon: '📦', color: 'blue', format: 'JSON', type: 'blue',
+    sub: () => `${store.products.length} Produkte · maschinenlesbar`,
+    build: (): ReportOutput => ({
+      content: JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        schema:     'passport-dpp/v1',
+        count:      store.products.length,
+        products:   store.products,
+      }, null, 2),
+      mime:     'application/json;charset=utf-8',
+      filename: `DPP-Gesamtexport-${dateStamp()}.json`,
+    }),
+  },
+  {
+    key: 'co2', title: 'CO₂-Bilanz Bericht', icon: '🌱', color: 'teal', format: 'CSV', type: 'teal',
+    sub: () => 'Emissionen je Lieferkettenstufe',
+    build: (): ReportOutput => csvReport('CO2-Bilanz',
+      store.products.flatMap(p => p.supplyChain.map(step => ({ p, step }))),
+      [
+        { header: 'SKU',       value: (r: any) => r.p.sku },
+        { header: 'Produkt',   value: (r: any) => r.p.name },
+        { header: 'Stufe',     value: (r: any) => r.step.label },
+        { header: 'Lieferant', value: (r: any) => r.step.supplier ?? '' },
+        { header: 'Land',      value: (r: any) => r.step.country ?? '' },
+        { header: 'CO2',       value: (r: any) => r.step.co2 ?? '' },
+        { header: 'CO2 Produkt gesamt', value: (r: any) => r.p.co2Total },
+      ]),
+  },
+  {
+    key: 'audit', title: 'Lieferanten-Audit', icon: '🔗', color: 'amber', format: 'CSV', type: 'amber',
+    sub: () => 'LkSG-konform · alle Stufen',
+    build: (): ReportOutput => csvReport('Lieferanten-Audit',
+      store.products.flatMap(p => p.supplyChain.map(step => ({ p, step }))),
+      [
+        { header: 'Lieferant',        value: (r: any) => r.step.supplier ?? '—' },
+        { header: 'Stufe',            value: (r: any) => r.step.label },
+        { header: 'Land',             value: (r: any) => r.step.country ?? '' },
+        { header: 'Produkt',          value: (r: any) => r.p.name },
+        { header: 'SKU',              value: (r: any) => r.p.sku },
+        { header: 'Status',           value: (r: any) => r.step.status },
+        { header: 'Zertifiziert bis', value: (r: any) => r.step.certifiedUntil ?? '' },
+      ]),
+  },
 ]
 
-const reportHistory = [
-  { id: 1, name: 'ESPR Compliance Q2 2026', date: '27.05.2026', format: 'PDF', size: '2,4 MB', type: 'green', icon: '🛡️', status: 'done' },
-  { id: 2, name: 'DPP Export – alle Produkte', date: '20.05.2026', format: 'JSON', size: '1,1 MB', type: 'blue', icon: '📦', status: 'done' },
-  { id: 3, name: 'CO₂-Bilanz Q1 2026', date: '15.04.2026', format: 'XLSX', size: '0,8 MB', type: 'teal', icon: '🌱', status: 'done' },
-  { id: 4, name: 'Lieferanten-Audit Bericht', date: '01.04.2026', format: 'PDF', size: '4,2 MB', type: 'amber', icon: '🔗', status: 'done' },
-  { id: 5, name: 'REACH Stoffdaten Export', date: '28.03.2026', format: 'CSV', size: '0,3 MB', type: 'crit', icon: '⚗️', status: 'pending' },
-  { id: 6, name: 'Batterieverordnung Report', date: '15.03.2026', format: 'PDF', size: '1,7 MB', type: 'crit', icon: '🔋', status: 'failed' },
-]
+// ─────────────────────────────────────────────
+// Verlauf
+// ─────────────────────────────────────────────
 
-const scheduled = [
-  { name: 'Monatlicher Compliance-Check', icon: '🛡️', frequency: 'Monatlich, 1. des Monats', next: 'Do, 1. Juni', active: true },
-  { name: 'Wöchentliche DPP-Zusammenfassung', icon: '📦', frequency: 'Jede Woche Montag', next: 'Mo, 2. Juni', active: true },
-  { name: 'Quartals CO₂-Bericht', icon: '🌱', frequency: 'Quartalsweise', next: 'Di, 1. Juli', active: true },
-  { name: 'Lieferanten-Statusbericht', icon: '🔗', frequency: 'Monatlich, 15. des Monats', next: 'So, 15. Juni', active: false },
-]
+interface HistoryEntry {
+  id:       string
+  name:     string
+  date:     string
+  format:   string
+  size:     string
+  type:     string
+  icon:     string
+  status:   'done' | 'pending' | 'failed'
+  /** Nur in dieser Sitzung erzeugte Berichte lassen sich erneut laden. */
+  payload?: ReportOutput
+}
+
+const reportHistory = ref<HistoryEntry[]>([])
+
+function formatSize(content: string): string {
+  const kb = new Blob([content]).size / 1024
+  return kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(1)} MB`
+}
+
+async function runReport(report: typeof quickReports[number]) {
+  busy.value = report.key
+  try {
+    const output = report.build()
+    downloadFile(output.filename, output.content, output.mime)
+
+    reportHistory.value.unshift({
+      id:      `${report.key}-${Date.now()}`,
+      name:    report.title,
+      date:    new Date().toLocaleDateString('de-DE'),
+      format:  report.format,
+      size:    formatSize(output.content),
+      type:    report.type,
+      icon:    report.icon,
+      status:  'done',
+      payload: output,
+    })
+    toast(report.title)
+  } catch (e) {
+    console.error('[Reports] runReport:', e)
+    reportHistory.value.unshift({
+      id:     `${report.key}-${Date.now()}`,
+      name:   report.title,
+      date:   new Date().toLocaleDateString('de-DE'),
+      format: report.format,
+      size:   '—',
+      type:   report.type,
+      icon:   report.icon,
+      status: 'failed',
+    })
+  } finally {
+    busy.value = null
+  }
+}
+
+function downloadReport(rep: HistoryEntry) {
+  if (!rep.payload) return
+  downloadFile(rep.payload.filename, rep.payload.content, rep.payload.mime)
+  toast(rep.name)
+}
+
+// ─────────────────────────────────────────────
+// Geplante Berichte
+// ─────────────────────────────────────────────
+
+const fmtDay = (d: Date) => d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })
+
+/** Naechster Monatstag `day`, ab morgen gerechnet. */
+function nextMonthly(day: number): string {
+  const now  = new Date()
+  const next = new Date(now.getFullYear(), now.getMonth(), day)
+  if (next <= now) next.setMonth(next.getMonth() + 1)
+  return fmtDay(next)
+}
+
+/** Naechster Wochentag (0 = Sonntag, 1 = Montag …). */
+function nextWeekday(weekday: number): string {
+  const next = new Date()
+  const diff = (weekday - next.getDay() + 7) % 7 || 7
+  next.setDate(next.getDate() + diff)
+  return fmtDay(next)
+}
+
+/** Erster Tag des naechsten Quartals. */
+function nextQuarter(): string {
+  const now = new Date()
+  const q   = Math.floor(now.getMonth() / 3) + 1
+  return fmtDay(new Date(now.getFullYear() + (q > 3 ? 1 : 0), (q % 4) * 3, 1))
+}
+
+const scheduled = ref([
+  { name: 'Monatlicher Compliance-Check',      icon: '🛡️', frequency: 'Monatlich, 1. des Monats',  next: nextMonthly(1),  active: true  },
+  { name: 'Wöchentliche DPP-Zusammenfassung',  icon: '📦', frequency: 'Jede Woche Montag',          next: nextWeekday(1),  active: true  },
+  { name: 'Quartals CO₂-Bericht',              icon: '🌱', frequency: 'Quartalsweise',              next: nextQuarter(),   active: true  },
+  { name: 'Lieferanten-Statusbericht',         icon: '🔗', frequency: 'Monatlich, 15. des Monats', next: nextMonthly(15), active: false },
+])
+
+// ─────────────────────────────────────────────
+// Statistik – aus den echten Daten statt fest verdrahtet
+// ─────────────────────────────────────────────
+
+const reportStats = computed(() => {
+  const thisMonth = new Date().toLocaleDateString('de-DE')
+  const totalBytes = reportHistory.value.reduce(
+    (sum, r) => sum + (r.payload ? new Blob([r.payload.content]).size : 0), 0,
+  )
+  return {
+    generated:  reportHistory.value.length,
+    thisMonth:  reportHistory.value.filter(r => r.date === thisMonth).length,
+    products:   store.products.length,
+    volume:     totalBytes < 1024 * 1024
+      ? `${(totalBytes / 1024).toFixed(1)} KB`
+      : `${(totalBytes / 1024 / 1024).toFixed(1)} MB`,
+  }
+})
 </script>
 
 <style scoped>
@@ -282,4 +490,7 @@ const scheduled = [
   from { transform: translateY(12px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
+
+.rep-empty { font-size: 12px; color: var(--color-text-3); padding: 18px 2px; }
+.qc-btn:disabled, .rep-dl:disabled { opacity: 0.45; cursor: not-allowed; }
 </style>

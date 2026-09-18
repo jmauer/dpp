@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import type { Database, ProfileRow } from '~/types/database'
 
 // ─────────────────────────────────────────────
 // Types
@@ -30,6 +29,21 @@ export interface LoginCredentials {
   password: string
 }
 
+/** Raw response shape returned by the backend `/authentication` endpoint. */
+export interface LoginResponse {
+  api_key: string
+  role:    UserRole
+}
+
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
+
+const API_KEY_KEY = 'dpp-api-key'
+const USER_KEY     = 'dpp-user'
+
+
+
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
@@ -43,68 +57,60 @@ function buildInitials(name: string): string {
     .join('')
 }
 
+function parseUser(raw: unknown): User | null {
+  if (!raw || typeof raw !== 'object') return null
+  const u = raw as Record<string, unknown>
+  if (!u.id || !u.email) return null
+  const name = String(u.name ?? '')
+  return {
+    id:               String(u.id),
+    name,
+    firstName:        String(u.firstName ?? name.split(' ')[0] ?? ''),
+    lastName:         String(u.lastName  ?? name.split(' ').slice(1).join(' ') ?? ''),
+    email:            String(u.email),
+    role:             (u.role as UserRole) ?? 'viewer',
+    company:          String(u.company   ?? ''),
+    companyId:        String(u.companyId ?? ''),
+    avatarInitials:   String(u.avatarInitials ?? buildInitials(name)),
+    avatarUrl:        u.avatarUrl ? String(u.avatarUrl) : undefined,
+    language:         String(u.language  ?? 'de'),
+    createdAt:        String(u.createdAt  ?? new Date().toISOString()),
+    lastLoginAt:      String(u.lastLoginAt ?? new Date().toISOString()),
+    twoFactorEnabled: Boolean(u.twoFactorEnabled ?? false),
+  }
+}
+
+function isLocalStorageAvailable(): boolean {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined'
+}
+
 // ─────────────────────────────────────────────
 // Store
-//
-// Authentifizierung laeuft ueber Supabase Auth. Die Session liegt in
-// einem Cookie und ist dadurch auch serverseitig lesbar - anders als
-// zuvor beim API-Key im localStorage. Rolle und Mandant stehen in
-// public.profiles und werden nach dem Login nachgeladen.
 // ─────────────────────────────────────────────
 
 export const useAuthStore = defineStore('auth', () => {
 
-  const supabase      = useSupabaseClient<Database>()
-  const supabaseUser  = useSupabaseUser()
-
   // ── State ─────────────────────────────────
 
-  const _profile   = ref<ProfileRow | null>(null)
-  const _company   = ref<string>('')
+  const user       = ref<User | null>(null)
+  const apiKey     = ref<string | null>(null)
   const status     = ref<AuthStatus>('idle')
   const error      = ref<string | null>(null)
   const returnPath = ref<string>('/dashboard')
 
   // ── Computed ──────────────────────────────
 
-  /** Zusammengesetzt aus Supabase-Session und Profilzeile. */
-  const user = computed<User | null>(() => {
-    const su = supabaseUser.value
-    if (!su) return null
+  const isAuthenticated = computed(() =>
+    user.value !== null && apiKey.value !== null
+  )
 
-    const p         = _profile.value
-    const email     = su.email ?? p?.email ?? ''
-    const firstName = p?.first_name ?? ''
-    const lastName  = p?.last_name ?? ''
-    const name      = `${firstName} ${lastName}`.trim() || email
-
-    return {
-      id:               su.id,
-      name,
-      firstName,
-      lastName,
-      email,
-      role:             p?.role ?? 'viewer',
-      company:          _company.value,
-      companyId:        p?.company_id ?? '',
-      avatarInitials:   buildInitials(name) || (email[0]?.toUpperCase() ?? '?'),
-      avatarUrl:        p?.avatar_url ?? undefined,
-      language:         p?.language ?? 'de',
-      createdAt:        p?.created_at ?? su.created_at ?? new Date().toISOString(),
-      lastLoginAt:      p?.last_login_at ?? new Date().toISOString(),
-      twoFactorEnabled: false,
-    }
-  })
-
-  const isAuthenticated = computed(() => supabaseUser.value !== null)
-  const isLoading       = computed(() => status.value === 'loading')
+  const isLoading = computed(() => status.value === 'loading')
 
   const isAdmin   = computed(() => user.value?.role === 'admin')
   const isManager = computed(() => ['admin', 'manager'].includes(user.value?.role ?? ''))
   const isViewer  = computed(() => user.value?.role === 'viewer')
 
-  /** Mandant des angemeldeten Users – vom Products-Store beim Anlegen gebraucht. */
-  const companyId = computed(() => _profile.value?.company_id ?? null)
+  const config = useRuntimeConfig()
 
   /** Role-based permission check */
   function can(action: 'read' | 'write' | 'admin'): boolean {
@@ -117,191 +123,261 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // ── Profil ────────────────────────────────
+  // ── Persistence (manual — no pinia plugin needed) ──
 
-  /**
-   * Laedt Profil und Firmenname. Idempotent: laeuft nur, wenn eine
-   * Session besteht und noch nichts geladen ist.
-   */
-  async function loadProfile(force = false): Promise<void> {
-    if (!supabaseUser.value) { _profile.value = null; return }
-    if (_profile.value && !force) return
-
-    const { data, error: e } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', supabaseUser.value.id)
-      .maybeSingle()
-
-    if (e) {
-      console.error('[auth] Profil konnte nicht geladen werden:', e.message)
-      return
-    }
-
-    _profile.value = (data as ProfileRow | null) ?? null
-
-    if (_profile.value?.company_id) {
-      const { data: c } = await supabase
-        .from('companies')
-        .select('name')
-        .eq('id', _profile.value.company_id)
-        .maybeSingle()
-      _company.value = (c as { name: string } | null)?.name ?? ''
+  function _persist() {
+    if (!isLocalStorageAvailable()) return
+    if (user.value && apiKey.value) {
+      try {
+        localStorage.setItem(USER_KEY,    JSON.stringify(user.value))
+        localStorage.setItem(API_KEY_KEY, apiKey.value)
+      } catch { /* Storage full — fail silently */ }
     } else {
-      _company.value = ''
+      localStorage.removeItem(USER_KEY)
+      localStorage.removeItem(API_KEY_KEY)
     }
   }
 
-  /** Beim Start bzw. vor geschuetzten Routen aufrufen. */
-  async function init(): Promise<boolean> {
-    await loadProfile()
-    status.value = isAuthenticated.value ? 'authenticated' : 'idle'
-    return isAuthenticated.value
+  function _restore(): boolean {
+    if (!isLocalStorageAvailable()) return false
+    try {
+      const rawUser   = localStorage.getItem(USER_KEY)
+      const storedKey = localStorage.getItem(API_KEY_KEY)
+      if (!rawUser || !storedKey) return false
+
+      const restored = parseUser(JSON.parse(rawUser))
+      if (!restored) {
+        _clear(false)
+        return false
+      }
+
+      user.value   = restored
+      apiKey.value = storedKey
+      status.value = 'authenticated'
+      return true
+    } catch {
+      _clear(false)
+      return false
+    }
+  }
+
+  function _clear(persist = true) {
+    user.value   = null
+    apiKey.value = null
+    status.value = 'idle'
+    error.value  = null
+    if (persist && isLocalStorageAvailable()) {
+      localStorage.removeItem(USER_KEY)
+      localStorage.removeItem(API_KEY_KEY)
+    }
+  }
+
+  /** Build a User object from the entered email and the role the backend returns. */
+  function _buildUser(email: string, role: UserRole): User {
+    const local     = email.split('@')[0] ?? email
+    const parts     = local.split(/[._-]/).filter(Boolean)
+    const cap       = (s: string) => s ? s[0]!.toUpperCase() + s.slice(1) : ''
+    const firstName = cap(parts[0] ?? '')
+    const lastName  = parts.slice(1).map(cap).join(' ')
+    const name      = `${firstName} ${lastName}`.trim() || email
+    const nowIso    = new Date().toISOString()
+
+    return {
+      id:               `usr_${local}`,
+      name,
+      firstName,
+      lastName,
+      email,
+      role,
+      company:          '',
+      companyId:        '',
+      avatarInitials:   buildInitials(name) || (email[0]?.toUpperCase() ?? '?'),
+      avatarUrl:        undefined,
+      language:         'de',
+      createdAt:        nowIso,
+      lastLoginAt:      nowIso,
+      twoFactorEnabled: false,
+    }
   }
 
   // ── Public actions ────────────────────────
 
+  /**
+   * Call once in app.vue onMounted() to restore session from localStorage.
+   */
+  function init(): boolean {
+    return _restore()
+  }
+
+  /**
+   * Log in with email + password.
+   * On success the backend returns an `api_key` (persisted and sent with every
+   * subsequent request, see `useApi`) and the user's `role`.
+   * Returns true on success.
+   */
   async function login(credentials: LoginCredentials): Promise<boolean> {
     status.value = 'loading'
     error.value  = null
 
-    const { error: e } = await supabase.auth.signInWithPassword({
-      email:    credentials.email,
-      password: credentials.password,
-    })
+    try {
+      const data = await $fetch<LoginResponse>('/authentication', {
+        baseURL: config.public.apiBase,
+        method:  'POST',
+        body: {
+          EMail:    credentials.email,
+          Password: credentials.password,
+          Web:      true,
+        },
+      })
 
-    if (e) {
-      error.value  = _resolveAuthError(e.message)
+      if (!data?.api_key) throw new Error('Ungültige Serverantwort.')
+
+      apiKey.value = data.api_key
+      user.value   = _buildUser(credentials.email, data.role ?? 'viewer')
+      status.value = 'authenticated'
+      _persist()
+      return true
+
+    } catch (e: unknown) {
+      _clear(false)
+      error.value  = _resolveLoginError(e)
       status.value = 'error'
       return false
     }
-
-    await loadProfile(true)
-    status.value = 'authenticated'
-
-    if (!_profile.value?.company_id) {
-      error.value = 'Ihr Konto ist keinem Unternehmen zugeordnet. '
-                  + 'Bitte wenden Sie sich an Ihre Administration.'
-    }
-    return true
   }
 
-  /** Supabase-Meldungen in deutsche Klartexte uebersetzen. */
-  function _resolveAuthError(msg: string): string {
-    const m = msg.toLowerCase()
-    if (m.includes('invalid login credentials')) return 'E-Mail oder Passwort leider falsch.'
-    if (m.includes('email not confirmed'))       return 'Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse.'
-    if (m.includes('too many requests'))         return 'Zu viele Versuche. Bitte kurz warten.'
-    return msg || 'Anmeldung fehlgeschlagen.'
+  /** Map a failed login request to a user-facing German message. */
+  function _resolveLoginError(e: unknown): string {
+    const status = (e as { statusCode?: number; response?: { status?: number } })
+      ?.statusCode ?? (e as { response?: { status?: number } })?.response?.status
+    if (status === 401 || status === 403) return 'E-Mail oder Passwort leider falsch.'
+    if (status && status >= 500)          return 'Server nicht erreichbar. Bitte später erneut versuchen.'
+    return e instanceof Error ? e.message : 'Anmeldung fehlgeschlagen.'
   }
 
+  /**
+   * Log out — clears all auth state and redirects to /login.
+   */
   async function logout(redirect = true): Promise<void> {
-    try {
-      await supabase.auth.signOut()
-    } finally {
-      _profile.value = null
-      _company.value = ''
-      status.value   = 'idle'
-      error.value    = null
-      if (redirect) await navigateTo('/login')
+    // Die Legacy-API kennt keine Session, die invalidiert werden koennte –
+    // der api_key gilt, bis er serverseitig geloescht wird. Abmelden heisst
+    // hier deshalb: den Key lokal verwerfen.
+    _clear()
+    if (redirect) {
+      await navigateTo('/login')
     }
   }
 
   /**
-   * Profilfelder aendern. Optimistisch mit Rollback.
+   * Update profile fields (name, language, avatar …).
+   * Optimistic update — rolls back on error.
    */
   async function updateProfile(patch: Partial<Pick<User,
     'firstName' | 'lastName' | 'email' | 'language' | 'avatarUrl'
   >>): Promise<boolean> {
-    if (!_profile.value) return false
-    const prev = { ..._profile.value }
+    if (!user.value) return false
 
-    _profile.value = {
-      ..._profile.value,
-      first_name: patch.firstName ?? _profile.value.first_name,
-      last_name:  patch.lastName  ?? _profile.value.last_name,
-      language:   patch.language  ?? _profile.value.language,
-      avatar_url: patch.avatarUrl ?? _profile.value.avatar_url,
+    const prev      = { ...user.value }
+    const firstName = patch.firstName ?? user.value.firstName
+    const lastName  = patch.lastName  ?? user.value.lastName
+
+    // Optimistic update
+    user.value = {
+      ...user.value,
+      ...patch,
+      name:           `${firstName} ${lastName}`.trim(),
+      avatarInitials: buildInitials(`${firstName} ${lastName}`),
     }
+    _persist()
 
-    const { error: e } = await supabase
-      .from('profiles')
-      .update({
-        first_name: _profile.value.first_name,
-        last_name:  _profile.value.last_name,
-        language:   _profile.value.language,
-        avatar_url: _profile.value.avatar_url,
+    try {
+      const { apiFetch } = useApi()
+      // PascalCase wie bei /createUser – das Backend erwartet diese Schluessel.
+      await apiFetch('/updateUser', {
+        method: 'POST',
+        body: {
+          PersonalNummer: prev.id,
+          FirstName:      firstName,
+          LastName:       lastName,
+          EMail:          patch.email ?? prev.email,
+          Language:       patch.language ?? prev.language,
+          ...(patch.avatarUrl !== undefined ? { AvatarUrl: patch.avatarUrl } : {}),
+        },
       })
-      .eq('id', prev.id)
-
-    if (e) {
-      _profile.value = prev
-      error.value = 'Profil konnte nicht gespeichert werden.'
+      return true
+    } catch (e: unknown) {
+      user.value = prev   // Roll back
+      _persist()
+      error.value = e instanceof Error ? e.message : 'Profil konnte nicht gespeichert werden.'
       return false
     }
-
-    // E-Mail liegt in auth.users, nicht in profiles
-    if (patch.email && patch.email !== prev.email) {
-      const { error: mailErr } = await supabase.auth.updateUser({ email: patch.email })
-      if (mailErr) {
-        error.value = 'Profil gespeichert, aber die E-Mail-Adresse konnte nicht geändert werden.'
-        return false
-      }
-    }
-    return true
   }
 
+  /**
+   * Change password.
+   */
   async function changePassword(payload: {
     currentPassword: string
     newPassword:     string
   }): Promise<boolean> {
     error.value = null
-
-    // Supabase prueft das alte Passwort nicht mit; deshalb einmal
-    // neu anmelden, damit ein falsches Passwort auffaellt.
-    const email = user.value?.email
-    if (!email) { error.value = 'Nicht angemeldet.'; return false }
-
-    const { error: reauth } = await supabase.auth.signInWithPassword({
-      email,
-      password: payload.currentPassword,
-    })
-    if (reauth) {
-      error.value = 'Aktuelles Passwort ist falsch.'
+    try {
+      const { apiFetch } = useApi()
+      await apiFetch('/changePassword', {
+        method: 'POST',
+        body: {
+          EMail:           user.value?.email,
+          CurrentPassword: payload.currentPassword,
+          NewPassword:     payload.newPassword,
+        },
+      })
+      return true
+    } catch (e: unknown) {
+      const status = (e as { statusCode?: number })?.statusCode
+      error.value = status === 401 || status === 403
+        ? 'Aktuelles Passwort ist falsch.'
+        : e instanceof Error ? e.message : 'Passwort konnte nicht geändert werden.'
       return false
     }
-
-    const { error: e } = await supabase.auth.updateUser({ password: payload.newPassword })
-    if (e) {
-      error.value = e.message || 'Passwort konnte nicht geändert werden.'
-      return false
-    }
-    return true
   }
 
   /**
-   * Zwei-Faktor-Authentifizierung.
-   * Supabase kann das (MFA/TOTP), es ist aber noch nicht angebunden -
-   * dafuer braucht es einen Enrollment-Dialog mit QR-Code.
+   * Toggle 2-factor authentication.
    */
-  async function setTwoFactor(_enabled: boolean): Promise<boolean> {
-    error.value = 'Zwei-Faktor-Authentifizierung ist noch nicht eingerichtet.'
-    return false
+  async function setTwoFactor(enabled: boolean): Promise<boolean> {
+    if (!user.value) return false
+    const prev = { ...user.value }
+    try {
+      const { apiFetch } = useApi()
+      await apiFetch('/updateUser', {
+        method: 'POST',
+        body: { PersonalNummer: prev.id, EMail: prev.email, TwoFactorEnabled: enabled },
+      })
+      user.value = { ...prev, twoFactorEnabled: enabled }
+      _persist()
+      return true
+    } catch (e: unknown) {
+      error.value = e instanceof Error ? e.message : 'Zwei-Faktor-Einstellung konnte nicht geändert werden.'
+      return false
+    }
   }
 
+  /** Clear error state — useful when leaving a failed login page. */
   function clearError() {
     error.value = null
     if (status.value === 'error') status.value = 'idle'
   }
 
+  /** Where to navigate after successful login (set by auth middleware). */
   function setReturnPath(path: string) {
     returnPath.value = path
   }
 
   // ─────────────────────────────────────────
   return {
-    // State
-    user,
+    // State (readonly outside store)
+    user:             readonly(user),
+    apiKey:           readonly(apiKey),
     status:           readonly(status),
     error:            readonly(error),
     returnPath:       readonly(returnPath),
@@ -311,11 +387,9 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     isManager,
     isViewer,
-    companyId,
     // Actions
     can,
     init,
-    loadProfile,
     login,
     logout,
     updateProfile,

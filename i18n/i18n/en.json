@@ -145,7 +145,26 @@
       "completeness": "Completeness",
       "gaps": "Open gaps",
       "direction": "Sort direction"
-    }
+    },
+    "allComplete": "All required fields complete",
+    "backToOverview": "Back to overview",
+    "completeness": "DPP completeness",
+    "copied": "Copied!",
+    "copyUrl": "Copy",
+    "exportReport": "Export report",
+    "fixAllGaps": "Close all gaps",
+    "gapMissing": "Missing",
+    "gapOutdated": "Outdated",
+    "gapUnverified": "Unverified",
+    "materials": "Material composition",
+    "noMaterialData": "No material data available",
+    "notFound": "Product passport not found",
+    "openGaps": "{count} data gap open | {count} data gaps open",
+    "productInfo": "Product information",
+    "publicView": "Public view",
+    "qrCode": "QR code",
+    "qrDownload": "Download QR",
+    "qrShare": "Share"
   },
   "supplyChain": {
     "title": "Supply Chain",
@@ -184,7 +203,10 @@
     "filterPending": "Pending",
     "filterCritical": "Critical",
     "searchProducts": "Search Products…",
-    "selectProduct": "Select product"
+    "selectProduct": "Select product",
+    "incompleteWarning": "Information is missing for this supply stage.",
+    "productsShown": "products shown",
+    "selectPrompt": "Select a product to view its supply chain."
   },
   "compliance": {
     "title": "Regulations & Compliance",
@@ -296,8 +318,12 @@
       "danger": {
         "title": "Danger zone",
         "deactivate": "Deactivate account",
-        "delete": "Delete account"
-      }
+        "delete": "Delete account",
+        "deactivateDesc": "Your account will be locked. An administrator can reactivate it.",
+        "deleteDesc": "All your data will be permanently and irreversibly deleted."
+      },
+      "uploadPhoto": "Upload photo",
+      "emailHint": "After changing it you will receive a confirmation e-mail."
     },
     "dpp": {
       "title": "DPP Configuration",
@@ -350,7 +376,8 @@
     "daysLeft": "in {n} days",
     "noData": "No data available",
     "new": "New",
-    "resetFilters": "Reset filters"
+    "resetFilters": "Reset filters",
+    "status": "Status"
   },
   "brand": {
     "headline": "Digital Product Passport.\nSimple. Compliant. Transparent.",

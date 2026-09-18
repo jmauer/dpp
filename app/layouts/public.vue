@@ -19,7 +19,6 @@
             <svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M10 2L17 5V10C17 13.866 13.866 17 10 18C6.134 17 3 13.866 3 10V5L10 2Z" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             EU ESPR-konform
           </span>
-          <a href="/login" class="login-link">Anmelden →</a>
         </div>
       </div>
     </header>
@@ -84,12 +83,6 @@
   border: 1px solid rgba(29,158,117,0.2);
 }
 
-.login-link {
-  font-size: 13px; font-weight: 500;
-  color: var(--color-brand); text-decoration: none;
-}
-.login-link:hover { color: var(--color-brand-dark); }
-
 .public-main {
   flex: 1;
   max-width: 960px;
@@ -116,4 +109,26 @@
 .footer-links { display: flex; gap: 16px; }
 .footer-links a { color: var(--color-text-3); text-decoration: none; }
 .footer-links a:hover { color: var(--color-text-1); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .header-inner { padding: 0 1rem; height: 48px; gap: 10px; }
+  .brand { gap: 8px; min-width: 0; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 6px; }
+  .brand-name { font-size: 12px; }
+  .brand-sub  { font-size: 9px; }
+  .eu-tag { font-size: 10px; padding: 3px 8px; white-space: nowrap; }
+
+  .public-main { padding: 1rem; }
+
+  .public-footer { margin-top: 2rem; }
+  .footer-inner {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .footer-links { flex-wrap: wrap; gap: 12px; }
+}
 </style>

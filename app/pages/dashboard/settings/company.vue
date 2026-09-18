@@ -17,11 +17,23 @@
           <!-- Logo -->
           <div class="logo-row">
             <div class="company-logo" aria-label="Firmenlogo">
-              <span>{{ auth.user?.company?.charAt(0) ?? 'M' }}</span>
+              <img v-if="company.logoUrl" :src="company.logoUrl" alt="" class="company-logo-img" />
+              <span v-else>{{ (company.name || auth.user?.company)?.charAt(0) ?? 'M' }}</span>
             </div>
             <div class="logo-info">
-              <button class="g-btn g-btn-secondary sm">Logo hochladen</button>
-              <p class="field-hint">PNG oder SVG, empfohlen 200×200 px</p>
+              <input
+                ref="logoInput"
+                type="file"
+                accept="image/png,image/svg+xml,image/jpeg,image/webp"
+                class="visually-hidden"
+                @change="onLogoSelected"
+              />
+              <div class="logo-btn-row">
+                <button class="g-btn g-btn-secondary sm" @click="pickLogo">Logo hochladen</button>
+                <button v-if="company.logoUrl" class="g-btn g-btn-secondary sm" @click="removeLogo">Entfernen</button>
+              </div>
+              <p v-if="logoError" class="field-error" role="alert">{{ logoError }}</p>
+              <p v-else class="field-hint">PNG oder SVG, empfohlen 200×200 px, max. 512 KB</p>
             </div>
           </div>
 
@@ -186,7 +198,7 @@
               </svg>
               Verlängerung am 1. Januar 2027
             </div>
-            <button class="g-btn g-btn-secondary sm">Rechnung herunterladen</button>
+            <button class="g-btn g-btn-secondary sm" @click="downloadInvoice">Rechnung herunterladen</button>
           </div>
         </div>
       </section>
@@ -196,34 +208,93 @@
 </template>
 
 <script setup lang="ts">
+import { exportJson } from '~/utils/export'
+
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
-const { t }  = useI18n()
-const auth   = useAuthStore()
-const saved  = reactive<Record<string, boolean>>({})
+const { t }    = useI18n()
+const auth     = useAuthStore()
+const settings = useSettingsStore()
 
-async function save(key: string) {
-  await new Promise(r => setTimeout(r, 500))
-  saved[key] = true
-  setTimeout(() => { saved[key] = false }, 3000)
+// Werte kommen aus dem Settings-Store, damit sie einen Reload ueberleben.
+const company  = computed(() => settings.state.company)
+const branding = computed(() => settings.state.branding)
+const saved    = computed(() => settings.saved)
+
+onMounted(async () => {
+  await settings.fetchAll()
+  // Erststart: Firmenname aus dem angemeldeten Konto uebernehmen.
+  if (!settings.state.company.name && auth.user?.company) {
+    settings.state.company.name = auth.user.company
+  }
+})
+
+function save(section: 'company' | 'branding') {
+  return settings.save(section)
 }
 
-const company = reactive({
-  name:      auth.user?.company ?? 'Muster GmbH',
-  legalForm: 'GmbH',
-  industry:  'manufacturing',
-  size:      '251-1000',
-  country:   'DE',
-  website:   'https://www.mustergmbh.de',
-  vatId:     'DE123456789',
-})
+// ── Logo-Upload ───────────────────────────
+// Das Bild wird als Data-URL im Settings-State abgelegt: die Legacy-API hat
+// keinen Datei-Endpunkt, und bei 200x200 px bleibt das deutlich unter dem,
+// was ein JSON-Body vertraegt.
+const LOGO_MAX_BYTES = 512 * 1024
+const logoInput = ref<HTMLInputElement | null>(null)
+const logoError = ref<string | null>(null)
 
-const branding = reactive({
-  primaryColor: '#1D9E75',
-  font:         'DM Sans',
-  showLogo:     true,
-  hideFooter:   false,
-})
+function pickLogo() {
+  logoError.value = null
+  logoInput.value?.click()
+}
+
+function onLogoSelected(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  if (!/^image\/(png|svg\+xml|jpeg|webp)$/.test(file.type)) {
+    logoError.value = 'Bitte eine PNG-, SVG-, JPG- oder WebP-Datei wählen.'
+    return
+  }
+  if (file.size > LOGO_MAX_BYTES) {
+    logoError.value = 'Die Datei ist größer als 512 KB.'
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    settings.state.company.logoUrl = String(reader.result)
+    logoError.value = null
+    settings.save('company')
+  }
+  reader.onerror = () => { logoError.value = 'Die Datei konnte nicht gelesen werden.' }
+  reader.readAsDataURL(file)
+
+  // Zuruecksetzen, damit dieselbe Datei erneut gewaehlt werden kann.
+  ;(event.target as HTMLInputElement).value = ''
+}
+
+function removeLogo() {
+  settings.state.company.logoUrl = ''
+  settings.save('company')
+}
+
+// ── Rechnung ──────────────────────────────
+// Es gibt keinen Billing-Service; erzeugt wird eine Beleguebersicht mit den
+// Daten, die die App tatsaechlich kennt.
+function downloadInvoice() {
+  const c = settings.state.company
+  exportJson('PassPort-DPP-Rechnungsuebersicht', {
+    generatedAt: new Date().toISOString(),
+    plan:        'Enterprise',
+    renewal:     '2027-01-01',
+    customer: {
+      name:    c.name,
+      vatId:   c.vatId,
+      country: c.country,
+      website: c.website,
+      contact: auth.user?.email ?? '',
+    },
+  })
+}
 </script>
 
 <style scoped>
@@ -282,4 +353,9 @@ label       { font-size: 12px; font-weight: 500; color: var(--color-text-1); }
   .ps-item { border-bottom: 1px solid var(--color-border); }
   .ps-item:nth-child(3), .ps-item:nth-child(4) { border-bottom: none; }
 }
+
+.company-logo-img { width: 100%; height: 100%; object-fit: contain; border-radius: inherit; }
+.logo-btn-row     { display: flex; gap: 8px; }
+.field-error      { font-size: 12px; color: var(--color-crit); }
+.visually-hidden  { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

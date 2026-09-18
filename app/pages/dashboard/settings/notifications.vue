@@ -22,11 +22,29 @@
               <div v-if="ch.id === 'email' && auth.user?.email" class="ch-target">
                 {{ auth.user.email }}
               </div>
-              <div v-if="ch.id === 'slack' && !ch.connected" class="ch-connect-row">
-                <button class="g-btn g-btn-secondary sm">Mit Slack verbinden →</button>
-              </div>
-              <div v-if="ch.id === 'webhook' && !ch.connected" class="ch-connect-row">
-                <button class="g-btn g-btn-secondary sm">Webhook konfigurieren →</button>
+              <div v-if="ch.id === 'slack' || ch.id === 'webhook'" class="ch-connect-row">
+                <template v-if="connecting === ch.id">
+                  <input
+                    v-model.trim="connectUrl"
+                    type="url"
+                    class="g-input ch-url-input"
+                    :placeholder="ch.id === 'slack' ? 'https://hooks.slack.com/services/…' : 'https://erp.meinefirma.de/hooks/dpp'"
+                    :aria-label="`Ziel-URL für ${ch.name}`"
+                    @keyup.enter="confirmConnect(ch)"
+                  />
+                  <button class="g-btn g-btn-primary sm" :disabled="!isValidUrl(connectUrl)" @click="confirmConnect(ch)">
+                    {{ t('common.save') }}
+                  </button>
+                  <button class="g-btn g-btn-secondary sm" @click="cancelConnect">{{ t('common.cancel') }}</button>
+                </template>
+                <template v-else-if="ch.connected">
+                  <span class="ch-target">{{ ch.target }}</span>
+                  <button class="g-btn g-btn-secondary sm" @click="startConnect(ch)">Ändern</button>
+                  <button class="g-btn g-btn-secondary sm" @click="disconnect(ch)">Trennen</button>
+                </template>
+                <button v-else class="g-btn g-btn-secondary sm" @click="startConnect(ch)">
+                  {{ ch.id === 'slack' ? 'Mit Slack verbinden →' : 'Webhook konfigurieren →' }}
+                </button>
               </div>
             </div>
             <div class="ch-right">
@@ -161,39 +179,69 @@
 </template>
 
 <script setup lang="ts">
+import type { NotificationChannel } from '~/stores/settings'
+
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
-const { t }  = useI18n()
-const auth   = useAuthStore()
-const saved  = ref(false)
+const { t }    = useI18n()
+const auth     = useAuthStore()
+const settings = useSettingsStore()
 
-async function save() {
-  await new Promise(r => setTimeout(r, 500))
-  saved.value = true
-  setTimeout(() => { saved.value = false }, 3000)
+onMounted(() => { settings.fetchAll() })
+
+const channels = computed(() => settings.state.notifications.channels)
+const events   = computed(() => settings.state.notifications.events)
+const digest   = computed(() => settings.state.notifications.digest)
+const saved    = computed(() => settings.saved.notifications)
+
+const activeChannels = computed(() => channels.value.filter(c => c.connected))
+
+function save() {
+  return settings.save('notifications')
 }
 
-const channels = reactive([
-  { id: 'email',   icon: '📧', name: 'E-Mail',   desc: 'Benachrichtigungen an Ihre E-Mail-Adresse',   active: true,  connected: true  },
-  { id: 'inapp',   icon: '🔔', name: 'In-App',   desc: 'Meldungen im Dashboard-Benachrichtigungspanel',active: true, connected: true  },
-  { id: 'slack',   icon: '💬', name: 'Slack',    desc: 'Nachrichten in einen Slack-Kanal senden',     active: false, connected: false },
-  { id: 'webhook', icon: '🔗', name: 'Webhook',  desc: 'HTTP POST an eine beliebige URL',             active: false, connected: false },
-])
+// ── Slack / Webhook verbinden ─────────────
+// Beide Kanaele brauchen nur eine Ziel-URL; ein OAuth-Flow existiert
+// backendseitig nicht. Die URL wird inline erfasst und mitgespeichert.
 
-const activeChannels = computed(() => channels.filter(c => c.connected))
+const connecting = ref<string | null>(null)
+const connectUrl = ref('')
 
-const events = reactive([
-  { id: 'gap_new',      name: 'Neue Datenlücke',              desc: 'Eine neue Lücke wurde erkannt',                    channels: { email: true,  inapp: true  }, frequency: 'immediate' },
-  { id: 'gap_deadline', name: 'Frist nähert sich',            desc: 'Eine Lücken-Frist ist bald fällig',                channels: { email: true,  inapp: true  }, frequency: 'immediate' },
-  { id: 'gap_resolved', name: 'Lücke geschlossen',            desc: 'Eine Datenlücke wurde behoben',                    channels: { email: false, inapp: true  }, frequency: 'daily'     },
-  { id: 'compliance',   name: 'Compliance-Änderung',          desc: 'Ein Compliance-Status hat sich geändert',          channels: { email: true,  inapp: true  }, frequency: 'immediate' },
-  { id: 'supplier',     name: 'Lieferanten-Update',           desc: 'Ein Lieferant hat Daten eingereicht oder geändert',channels: { email: false, inapp: true  }, frequency: 'daily'     },
-  { id: 'report',       name: 'Bericht fertig',               desc: 'Ein geplanter Bericht wurde generiert',            channels: { email: true,  inapp: true  }, frequency: 'immediate' },
-  { id: 'reg_update',   name: 'Neue Regulatorik-Anforderung', desc: 'Eine EU-Verordnung hat neue Pflichtfelder',         channels: { email: true,  inapp: true  }, frequency: 'immediate' },
-  { id: 'login',        name: 'Neuer Login',                  desc: 'Anmeldung von einem unbekannten Gerät',            channels: { email: true,  inapp: false }, frequency: 'immediate' },
-])
+function isValidUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
-const digest = reactive({ active: true, day: '1', time: '08:00' })
+function startConnect(channel: NotificationChannel) {
+  connecting.value = channel.id
+  connectUrl.value = channel.target ?? ''
+}
+
+function cancelConnect() {
+  connecting.value = null
+  connectUrl.value = ''
+}
+
+async function confirmConnect(channel: NotificationChannel) {
+  if (!isValidUrl(connectUrl.value)) return
+  channel.target    = connectUrl.value
+  channel.connected = true
+  channel.active    = true
+  cancelConnect()
+  await save()
+}
+
+async function disconnect(channel: NotificationChannel) {
+  channel.target    = ''
+  channel.connected = false
+  channel.active    = false
+  // Ereignisse, die nur ueber diesen Kanal liefen, wuerden sonst ins Leere laufen.
+  settings.state.notifications.events.forEach(e => { delete e.channels[channel.id] })
+  await save()
+}
 </script>
 
 <style scoped>
@@ -267,4 +315,7 @@ label     { font-size: 12px; font-weight: 500; color: var(--color-text-1); }
   .eh-freq, .evt-freq-cell { display: none; }
   .eh-ch, .evt-ch-cell     { width: 36px; }
 }
+
+.ch-connect-row  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.ch-url-input    { min-width: 260px; font-size: 12px; }
 </style>

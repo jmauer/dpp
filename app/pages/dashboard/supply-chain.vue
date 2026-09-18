@@ -10,11 +10,11 @@
         </p>
       </div>
       <div class="header-actions">
-        <button class="g-btn g-btn-secondary hide-mobile">
+        <button class="g-btn g-btn-secondary hide-mobile" :disabled="!store.products.length" @click="exportChain">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           {{ t('common.export') }}
         </button>
-        <button class="g-btn g-btn-primary hide-mobile">
+        <button class="g-btn g-btn-primary hide-mobile" :disabled="!selected" @click="openSupplierForm()">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           {{ t('supplyChain.addSupplier') }}
         </button>
@@ -84,7 +84,7 @@
               class="filter-btn"
               :class="{ active: productStatusFilter === f.value }"
               :aria-pressed="productStatusFilter === f.value"
-              @click="productStatusFilter = f.value"
+              @click="productStatusFilter = f.value as typeof productStatusFilter"
             >
               <span class="filter-dot" :style="{ background: f.color }" aria-hidden="true"/>
               {{ f.label }}
@@ -218,7 +218,7 @@
       <!-- Step detail cards -->
       <div class="step-cards">
         <div
-          v-for="step in selected.supplyChain"
+          v-for="(step, i) in selected.supplyChain"
           :key="step.stage + '-card'"
           class="g-card step-card"
           :class="`step-${step.status}`"
@@ -235,6 +235,18 @@
               <span class="sdot" :class="`sdot-${step.status}`" aria-hidden="true"/>
               {{ t(`supplyChain.status.${step.status}`) }}
             </span>
+            <div class="step-actions">
+              <button class="step-icon-btn" :aria-label="`${step.label} bearbeiten`" @click="openSupplierForm(i)">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="step-icon-btn danger" :aria-label="`${step.label} entfernen`" @click="removeSupplier(i)">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <dl class="step-meta">
@@ -325,11 +337,68 @@
       </div>
     </div>
 
+
+    <!-- ── Lieferanten-Dialog ── -->
+    <Teleport to="body">
+      <div v-if="showSupplierForm" class="sup-modal-backdrop" @click.self="closeSupplierForm">
+        <div class="sup-modal g-card" role="dialog" aria-modal="true" aria-labelledby="sup-modal-title">
+          <h2 id="sup-modal-title" class="sup-modal-title">
+            {{ editIndex === null ? t('supplyChain.addSupplier') : 'Lieferkettenstufe bearbeiten' }}
+          </h2>
+          <p class="sup-modal-sub">{{ selected?.name }}</p>
+
+          <form class="sup-form" novalidate @submit.prevent="saveSupplier">
+            <div class="sup-field">
+              <label for="sf-stage">Stufe</label>
+              <select id="sf-stage" v-model="supplierForm.stage" class="g-input">
+                <option v-for="(label, val) in stageLabels" :key="val" :value="val">{{ label }}</option>
+              </select>
+            </div>
+            <div class="sup-field">
+              <label for="sf-supplier">Lieferant</label>
+              <input id="sf-supplier" v-model.trim="supplierForm.supplier" type="text" class="g-input" placeholder="Aurubis AG" />
+            </div>
+            <div class="sup-field">
+              <label for="sf-country">Land</label>
+              <input id="sf-country" v-model.trim="supplierForm.country" type="text" class="g-input" placeholder="Deutschland" />
+            </div>
+            <div class="sup-field">
+              <label for="sf-co2">CO₂-Beitrag</label>
+              <input id="sf-co2" v-model.trim="supplierForm.co2" type="text" class="g-input" placeholder="12 kg CO₂e" />
+            </div>
+            <div class="sup-field">
+              <label for="sf-cert">Zertifiziert bis</label>
+              <input id="sf-cert" v-model="supplierForm.certifiedUntil" type="date" class="g-input" />
+            </div>
+            <div class="sup-field">
+              <label for="sf-status">Status</label>
+              <select id="sf-status" v-model="supplierForm.status" class="g-input">
+                <option value="ok">{{ t('supplyChain.status.ok') }}</option>
+                <option value="warn">{{ t('supplyChain.status.warn') }}</option>
+                <option value="neutral">{{ t('supplyChain.status.neutral') }}</option>
+              </select>
+            </div>
+
+            <p v-if="store.error" class="sup-error" role="alert">{{ store.error }}</p>
+
+            <div class="sup-actions">
+              <button type="button" class="g-btn g-btn-secondary" @click="closeSupplierForm">
+                {{ t('common.cancel') }}
+              </button>
+              <button type="submit" class="g-btn g-btn-primary" :disabled="store.isSaving || !supplierForm.supplier">
+                {{ store.isSaving ? '…' : t('common.save') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Product, SupplyStep } from '~/stores/products'
+import type { Product, SupplyStep, SupplyStage } from '~/stores/products'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
@@ -378,9 +447,117 @@ watch(filteredProducts, (list) => {
   }
   // Auto-select first if nothing selected yet
   if (!selectedId.value && list.length > 0) {
-    selectedId.value = list[0].id
+    selectedId.value = list[0]?.id ?? null
   }
 }, { immediate: true })
+
+// ── Export ─────────────────────────────────────────────
+
+const { exportSupplyChainCsv } = useDppExport()
+function exportChain() {
+  exportSupplyChainCsv(store.products)
+}
+
+// ── Lieferkettenstufen pflegen ─────────────────────────
+
+const stageLabels: Record<SupplyStage, string> = {
+  raw:           t('supplyChain.stages.raw'),
+  preproduction: t('supplyChain.stages.preproduction'),
+  manufacturing: t('supplyChain.stages.manufacturing'),
+  logistics:     t('supplyChain.stages.logistics'),
+  endoflife:     t('supplyChain.stages.endoflife'),
+}
+
+const stageEmoji: Record<SupplyStage, string> = {
+  raw:           '⛏️',
+  preproduction: '🏭',
+  manufacturing: '⚙️',
+  logistics:     '🚛',
+  endoflife:     '♻️',
+}
+
+const showSupplierForm = ref(false)
+/** null = neue Stufe, sonst der Index der bearbeiteten Stufe */
+const editIndex = ref<number | null>(null)
+
+const supplierForm = reactive<SupplyStep & { certifiedUntil: string }>({
+  stage:          'raw',
+  label:          stageLabels.raw,
+  emoji:          stageEmoji.raw,
+  status:         'ok',
+  supplier:       '',
+  country:        '',
+  co2:            '',
+  certifiedUntil: '',
+})
+
+function openSupplierForm(index: number | null = null) {
+  if (!selected.value) return
+  store.error = null
+  editIndex.value = index
+
+  const step = index === null ? null : selected.value.supplyChain[index]
+  Object.assign(supplierForm, {
+    stage:          step?.stage    ?? 'raw',
+    label:          step?.label    ?? stageLabels.raw,
+    emoji:          step?.emoji    ?? stageEmoji.raw,
+    status:         step?.status   ?? 'ok',
+    supplier:       step?.supplier ?? '',
+    country:        step?.country  ?? '',
+    co2:            step?.co2      ?? '',
+    // <input type="date"> versteht nur YYYY-MM-DD
+    certifiedUntil: step?.certifiedUntil?.slice(0, 10) ?? '',
+  })
+  showSupplierForm.value = true
+}
+
+function closeSupplierForm() {
+  showSupplierForm.value = false
+  editIndex.value = null
+  store.error = null
+}
+
+// Label und Emoji folgen der gewaehlten Stufe, solange nichts Eigenes drinsteht.
+watch(() => supplierForm.stage, (stage) => {
+  supplierForm.label = stageLabels[stage]
+  supplierForm.emoji = stageEmoji[stage]
+})
+
+async function saveSupplier() {
+  const product = selected.value
+  if (!product || !supplierForm.supplier?.trim()) return
+
+  const step: SupplyStep = {
+    stage:    supplierForm.stage,
+    label:    supplierForm.label || stageLabels[supplierForm.stage],
+    emoji:    supplierForm.emoji || stageEmoji[supplierForm.stage],
+    status:   supplierForm.status,
+    supplier: supplierForm.supplier.trim(),
+    country:  supplierForm.country?.trim() || undefined,
+    co2:      supplierForm.co2?.trim()     || undefined,
+    ...(supplierForm.certifiedUntil ? { certifiedUntil: supplierForm.certifiedUntil } : {}),
+  }
+
+  const chain = [...product.supplyChain]
+  if (editIndex.value === null) chain.push(step)
+  else                          chain[editIndex.value] = step
+
+  const ok = await store.update(product.id, { supplyChain: chain })
+  if (ok) closeSupplierForm()
+}
+
+async function removeSupplier(index: number) {
+  const product = selected.value
+  if (!product) return
+
+  const step = product.supplyChain[index]
+  if (!step) return
+  if (!confirm(`Stufe „${step.label}" wirklich aus der Lieferkette entfernen?`)) return
+
+  await store.update(product.id, {
+    supplyChain: product.supplyChain.filter((_, i) => i !== index),
+  })
+}
 
 // ── Chain helpers ──────────────────────────────────────
 
@@ -717,5 +894,38 @@ const filteredSuppliers = computed(() => {
   .step-cards { grid-template-columns: 1fr; }
   .chain-flow .flow-emoji { font-size: 16px; }
   .flow-node { width: 38px; height: 38px; }
+}
+
+/* ── Aktionen je Lieferkettenstufe ── */
+.step-actions   { display: flex; gap: 4px; margin-left: 6px; }
+.step-icon-btn  {
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--color-border); border-radius: 6px;
+  background: var(--color-surface); color: var(--color-text-3); cursor: pointer;
+}
+.step-icon-btn:hover        { color: var(--color-text-1); border-color: var(--color-text-3); }
+.step-icon-btn.danger:hover { color: var(--color-crit); border-color: var(--color-crit); }
+
+/* ── Lieferanten-Dialog ── */
+.sup-modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(0, 0, 0, 0.45);
+}
+.sup-modal       { width: 100%; max-width: 460px; padding: 1.5rem; max-height: 90vh; overflow-y: auto; }
+.sup-modal-title { font-size: 16px; font-weight: 600; margin: 0; }
+.sup-modal-sub   { font-size: 12px; color: var(--color-text-3); margin: 4px 0 18px; }
+.sup-form        { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sup-field       { display: flex; flex-direction: column; gap: 6px; }
+.sup-field label { font-size: 12px; font-weight: 500; color: var(--color-text-1); }
+.sup-error       {
+  grid-column: 1 / -1; margin: 0; font-size: 12px;
+  color: var(--color-crit); background: var(--color-crit-bg);
+  padding: 8px 10px; border-radius: 8px;
+}
+.sup-actions     { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+@media (max-width: 520px) {
+  .sup-form { grid-template-columns: 1fr; }
 }
 </style>

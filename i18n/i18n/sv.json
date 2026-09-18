@@ -45,6 +45,30 @@
     "privacy": "Privacy",
     "imprint": "Legal notice"
   },
+  "dashboard": {
+    "greeting": "God morgon, {name}",
+    "subtitle": "Din DPP-översikt för {date}",
+    "newPassport": "Nytt DPP",
+    "exportReport": "Exportera rapport",
+    "kpi": {
+      "activePassports": "Aktiva pass",
+      "complianceRate": "Efterlevnadsgrad",
+      "openGaps": "Öppna luckor",
+      "suppliers": "Leverantörer",
+      "thisMonth": "+{n} denna månad",
+      "vsLastMonth": "+{n} % mot föregående månad",
+      "critical": "{n} kritiska",
+      "verified": "{n} % verifierade"
+    },
+    "sections": {
+      "passports": "Produktpass",
+      "viewAll": "Visa alla",
+      "regulations": "Regelverk",
+      "details": "Detaljer",
+      "supplyChain": "Leveranskedja",
+      "activities": "Senaste aktivitet"
+    }
+  },
   "products": {
     "title": "Produktpass",
     "subtitle": "{filtered} av {total} produkter",
@@ -57,6 +81,14 @@
       "warn": "Ofullständig",
       "crit": "Kritisk",
       "draft": "Utkast"
+    },
+    "columns": {
+      "product": "Produkt",
+      "category": "Kategori",
+      "completeness": "Fullständighet",
+      "status": "Status",
+      "gaps": "Luckor",
+      "compliance": "Efterlevnad"
     },
     "status": {
       "ok": "Fullständig",
@@ -71,6 +103,42 @@
       "outdated": "Inaktuell",
       "unverified": "Overifierad"
     },
+    "detail": {
+      "back": "Produktpass",
+      "publicView": "Offentlig vy",
+      "exportReport": "Exportera rapport",
+      "qrCode": "QR-kod",
+      "completeness": "DPP-fullständighet",
+      "allComplete": "Alla obligatoriska fält är ifyllda",
+      "openGaps": "{n} öppen datalucka | {n} öppna dataluckor",
+      "sections": {
+        "productInfo": "Produktinformation",
+        "materials": "Materialsammansättning",
+        "gaps": "Öppna dataluckor ({n})",
+        "regulations": "Regelverk och efterlevnad",
+        "supplyChain": "Leveranskedja",
+        "certifications": "Certifikat"
+      },
+      "fields": {
+        "manufacturer": "Tillverkare",
+        "countryOfOrigin": "Tillverkningsland",
+        "manufacturingDate": "Tillverkningsdatum",
+        "weight": "Vikt",
+        "energyClass": "Energiklass",
+        "co2Total": "Total CO₂-balans",
+        "repairability": "Reparerbarhetsindex",
+        "recyclingRate": "Återvinningsgrad"
+      },
+      "qr": {
+        "title": "Offentligt produktpass",
+        "publicBadge": "Tillgängligt utan inloggning",
+        "hint": "Denna QR-kod länkar till det offentliga produktpasset – läsbart utan konto.",
+        "copyUrl": "Kopiera",
+        "copied": "Kopierat!",
+        "download": "Ladda ner QR",
+        "share": "Dela"
+      }
+    },
     "sort": {
       "updated": "Last updated",
       "name": "Name",
@@ -78,6 +146,182 @@
       "gaps": "Open gaps",
       "direction": "Sort direction"
     }
+  },
+  "supplyChain": {
+    "title": "Leveranskedja",
+    "subtitle": "Transparens genom alla led · {products} produkter · {suppliers} leverantörer",
+    "addSupplier": "Lägg till leverantör",
+    "stages": {
+      "raw": "Råmaterial",
+      "preproduction": "Förproduktion",
+      "manufacturing": "Tillverkning",
+      "logistics": "Logistik",
+      "endoflife": "Slutet av livscykeln"
+    },
+    "status": {
+      "ok": "Verifierad",
+      "warn": "Ofullständig",
+      "neutral": "Ej registrerad"
+    },
+    "fields": {
+      "supplier": "Leverantör",
+      "country": "Land",
+      "co2": "CO₂",
+      "certifiedUntil": "Certifierad till",
+      "notCaptured": "Ej registrerad"
+    },
+    "kpi": {
+      "totalSuppliers": "Leverantörer totalt",
+      "supplyGaps": "Dataluckor i leveranskedjan",
+      "countries": "Länder",
+      "avgCo2": "Genomsn. CO₂ per produkt",
+      "euShare": "EU-andel {n} %",
+      "critical": "{n} kritiska"
+    },
+    "allSuppliers": "Alla leverantörer",
+    "filterAll": "Alla",
+    "filterVerified": "Verifierade",
+    "filterPending": "Väntande",
+    "filterCritical": "Kritiska",
+    "searchProducts": "Sök produkter…",
+    "selectProduct": "Välj produkt"
+  },
+  "compliance": {
+    "title": "Regelverk och efterlevnad",
+    "subtitle": "Översikt över alla gällande EU-förordningar",
+    "overallScore": "Total efterlevnadspoäng",
+    "nextDeadline": "Nästa tidsfrist",
+    "regulations": "Förordningar i detalj",
+    "matrix": "Efterlevnadsmatris",
+    "matrixSub": "Alla produkter × alla förordningar",
+    "status": {
+      "ok": "Uppfylld",
+      "warn": "Pågår",
+      "crit": "Kritisk",
+      "pending": "Väntande",
+      "na": "Ej tillämpligt"
+    },
+    "expandProducts": "Status per produkt",
+    "nextDeadlineLabel": "Nästa tidsfrist",
+    "legend": {
+      "ok": "Uppfylld",
+      "warn": "Pågår",
+      "crit": "Kritisk",
+      "pending": "Väntande",
+      "na": "Ej relevant"
+    }
+  },
+  "reports": {
+    "title": "Rapporter",
+    "subtitle": "Exporterbara efterlevnads- och DPP-rapporter",
+    "newReport": "Ny rapport",
+    "history": "Rapporthistorik",
+    "scheduled": "Schemalagda rapporter",
+    "stats": "Rapportstatistik",
+    "status": {
+      "done": "Klar",
+      "pending": "Skapas",
+      "failed": "Fel"
+    },
+    "frequency": {
+      "monthly": "Månadsvis",
+      "weekly": "Veckovis",
+      "quarterly": "Kvartalsvis"
+    },
+    "formats": {
+      "pdf": "PDF",
+      "json": "JSON",
+      "xlsx": "XLSX",
+      "csv": "CSV"
+    }
+  },
+  "settings": {
+    "title": "Inställningar",
+    "sections": {
+      "account": "Konto",
+      "dpp": "Digitalt produktpass",
+      "system": "System"
+    },
+    "nav": {
+      "profile": "Profil och säkerhet",
+      "company": "Företag",
+      "dpp": "DPP-konfiguration",
+      "regulations": "Regelverk",
+      "notifications": "Aviseringar",
+      "integrations": "Integrationer och API",
+      "team": "Team och roller"
+    },
+    "profile": {
+      "title": "Profil och säkerhet",
+      "subtitle": "Personuppgifter, lösenord och inloggningssäkerhet",
+      "personalData": "Personuppgifter",
+      "firstName": "Förnamn",
+      "lastName": "Efternamn",
+      "email": "E-postadress",
+      "role": "Roll",
+      "language": "Språk",
+      "saveChanges": "Spara ändringar",
+      "saved": "✓ Sparat",
+      "saving": "Sparar…",
+      "password": {
+        "title": "Ändra lösenord",
+        "current": "Nuvarande lösenord",
+        "new": "Nytt lösenord",
+        "confirm": "Bekräfta lösenord",
+        "mismatch": "Lösenorden stämmer inte överens.",
+        "change": "Ändra lösenord",
+        "strength": {
+          "weak": "För svagt",
+          "medium": "Medel",
+          "good": "Bra",
+          "strong": "Starkt"
+        }
+      },
+      "tfa": {
+        "title": "Tvåfaktorsautentisering",
+        "active": "● Aktiv",
+        "inactive": "○ Inaktiv",
+        "enable": "Aktivera 2FA",
+        "disable": "Inaktivera 2FA",
+        "totp": "Autentiseringsapp",
+        "sms": "SMS",
+        "emailMethod": "E-post"
+      },
+      "sessions": {
+        "title": "Aktiva sessioner",
+        "current": "Aktuell",
+        "revokeAll": "Logga ut alla",
+        "revoke": "Logga ut"
+      },
+      "danger": {
+        "title": "Riskzon",
+        "deactivate": "Inaktivera konto",
+        "delete": "Radera konto"
+      }
+    },
+    "dpp": {
+      "title": "DPP-konfiguration",
+      "subtitle": "Systemövergripande parametrar för det digitala produktpasset",
+      "thresholds": "Tröskelvärden för fullständighet",
+      "requiredFields": "Obligatoriska fält i DPP",
+      "addField": "+ Lägg till fält",
+      "qrSection": "QR-kod och offentlig URL",
+      "autoGap": "Automatisk identifiering av dataluckor",
+      "save": "Spara",
+      "saved": "✓ Sparat"
+    }
+  },
+  "public": {
+    "dppTitle": "Digitalt produktpass",
+    "verifiedBy": "Verifierat · PassPort DPP-plattformen",
+    "shareTitle": "Dela produktpasset",
+    "shareHint": "Skanna denna QR-kod för att öppna produktpasset direkt.",
+    "whatIsDpp": "Vad är ett digitalt produktpass?",
+    "dppExplained": "Det digitala produktpasset (DPP) är ett EU-omfattande verktyg för att öka produkttransparensen genom hela värdekedjan.",
+    "lastUpdated": "Senast uppdaterad",
+    "dppId": "DPP-ID",
+    "issuedBy": "Utfärdat av",
+    "notFound": "Produktpasset hittades inte"
   },
   "common": {
     "loading": "Laddar…",

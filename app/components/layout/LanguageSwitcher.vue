@@ -126,7 +126,7 @@ const filteredRest = computed(() =>
 )
 
 async function pick(code: string) {
-  await setLocale(code)
+  await setLocale(code as typeof locale.value)
   open.value  = false
   query.value = ''
 }

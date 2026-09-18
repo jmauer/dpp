@@ -23,8 +23,23 @@
               <img v-else :src="auth.user.avatarUrl" :alt="auth.user.name" class="avatar-img"/>
             </div>
             <div class="avatar-info">
-              <button class="g-btn g-btn-secondary sm">{{ t('settings.profile.uploadPhoto') ?? 'Bild hochladen' }}</button>
-              <p class="field-hint">JPG oder PNG, max. 2 MB</p>
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="visually-hidden"
+                @change="onAvatarSelected"
+              />
+              <div class="avatar-btn-row">
+                <button class="g-btn g-btn-secondary sm" @click="pickAvatar">
+                  {{ t('settings.profile.uploadPhoto') ?? 'Bild hochladen' }}
+                </button>
+                <button v-if="auth.user?.avatarUrl" class="g-btn g-btn-secondary sm" @click="removeAvatar">
+                  {{ t('common.delete') ?? 'Entfernen' }}
+                </button>
+              </div>
+              <p v-if="avatarError" class="field-error" role="alert">{{ avatarError }}</p>
+              <p v-else class="field-hint">JPG oder PNG, max. 2 MB</p>
             </div>
           </div>
 
@@ -205,7 +220,9 @@
               <div class="danger-label">{{ t('settings.profile.danger.deactivate') }}</div>
               <div class="danger-desc">{{ t('settings.profile.danger.deactivateDesc') ?? 'Ihr Konto wird gesperrt. Ein Administrator kann es reaktivieren.' }}</div>
             </div>
-            <button class="g-btn btn-danger">{{ t('settings.profile.danger.deactivate') }}</button>
+            <button class="g-btn btn-danger" :disabled="accountBusy" @click="deactivateAccount">
+              {{ t('settings.profile.danger.deactivate') }}
+            </button>
           </div>
           <div class="g-divider" />
           <div class="danger-row">
@@ -213,8 +230,11 @@
               <div class="danger-label">{{ t('settings.profile.danger.delete') }}</div>
               <div class="danger-desc">{{ t('settings.profile.danger.deleteDesc') ?? 'Alle Ihre Daten werden dauerhaft und unwiderruflich gelöscht.' }}</div>
             </div>
-            <button class="g-btn btn-danger">{{ t('settings.profile.danger.delete') }}</button>
+            <button class="g-btn btn-danger" :disabled="accountBusy" @click="deleteAccount">
+              {{ t('settings.profile.danger.delete') }}
+            </button>
           </div>
+          <p v-if="accountError" class="field-error" role="alert">{{ accountError }}</p>
         </div>
       </section>
     </div>
@@ -310,6 +330,101 @@ async function toggleTfa() {
   if (ok) tfa.enabled = !tfa.enabled
 }
 
+// ── Profilbild ────────────────────────────
+// Ablage als Data-URL im User-Objekt: die Legacy-API hat keinen Upload-
+// Endpunkt fuer Dateien. 2 MB ist die Grenze, die die UI nennt.
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarError = ref<string | null>(null)
+
+function pickAvatar() {
+  avatarError.value = null
+  avatarInput.value?.click()
+}
+
+async function onAvatarSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file  = input.files?.[0]
+  input.value = ''   // damit dieselbe Datei erneut gewaehlt werden kann
+  if (!file) return
+
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+    avatarError.value = 'Bitte eine JPG-, PNG- oder WebP-Datei wählen.'
+    return
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    avatarError.value = 'Das Bild ist größer als 2 MB.'
+    return
+  }
+
+  const dataUrl = await new Promise<string | null>((resolve) => {
+    const reader = new FileReader()
+    reader.onload  = () => resolve(String(reader.result))
+    reader.onerror = () => resolve(null)
+    reader.readAsDataURL(file)
+  })
+
+  if (!dataUrl) {
+    avatarError.value = 'Die Datei konnte nicht gelesen werden.'
+    return
+  }
+
+  const ok = await auth.updateProfile({ avatarUrl: dataUrl })
+  if (!ok) avatarError.value = auth.error ?? 'Das Bild konnte nicht gespeichert werden.'
+}
+
+async function removeAvatar() {
+  avatarError.value = null
+  // Leerer String statt undefined: nur so landet das Feld ueberhaupt im
+  // Request-Body und der Server erfaehrt von der Loeschung.
+  const ok = await auth.updateProfile({ avatarUrl: '' })
+  if (!ok) avatarError.value = auth.error ?? 'Das Bild konnte nicht entfernt werden.'
+}
+
+// ── Konto sperren / löschen ───────────────
+// Beides ist folgenschwer, deshalb jeweils eine ausdrueckliche Bestaetigung –
+// beim Loeschen muss die eigene E-Mail-Adresse abgetippt werden.
+const users        = useUsersStore()
+const accountBusy  = ref(false)
+const accountError = ref<string | null>(null)
+
+function currentUserRef() {
+  return { personalNummer: auth.user?.id ?? '', email: auth.user?.email ?? '' }
+}
+
+async function deactivateAccount() {
+  if (!auth.user) return
+  if (!confirm('Ihr Konto wird gesperrt und Sie werden abgemeldet. Ein Administrator kann es wieder freischalten.\n\nFortfahren?')) return
+
+  accountBusy.value  = true
+  accountError.value = null
+  const ok = await users.deactivate(currentUserRef())
+  accountBusy.value  = false
+
+  if (ok) await auth.logout()
+  else    accountError.value = users.error ?? 'Konto konnte nicht gesperrt werden.'
+}
+
+async function deleteAccount() {
+  if (!auth.user) return
+  const typed = prompt(
+    `Dieser Schritt löscht Ihr Konto und alle zugehörigen Daten unwiderruflich.\n\n`
+    + `Tippen Sie zur Bestätigung Ihre E-Mail-Adresse ein:`,
+  )
+  if (typed?.trim().toLowerCase() !== auth.user.email.toLowerCase()) {
+    if (typed !== null) accountError.value = 'Die eingegebene E-Mail-Adresse stimmt nicht überein.'
+    return
+  }
+
+  accountBusy.value  = true
+  accountError.value = null
+  const ok = await users.remove(currentUserRef())
+  accountBusy.value  = false
+
+  if (ok) await auth.logout()
+  else    accountError.value = users.error ?? 'Konto konnte nicht gelöscht werden.'
+}
+
 // Sessions
 const sessions = ref([
   { id: 's1', icon: '💻', device: 'Chrome – macOS',   location: 'Stuttgart, DE', lastSeen: 'Jetzt aktiv',    current: true  },
@@ -400,4 +515,8 @@ label       { font-size: 12px; font-weight: 500; color: var(--color-text-1); }
   .form-grid { grid-template-columns: 1fr; }
   .field.full, .full { grid-column: 1; }
 }
+
+.avatar-btn-row  { display: flex; gap: 8px; }
+.field-error     { font-size: 12px; color: var(--color-crit); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

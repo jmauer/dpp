@@ -10,7 +10,7 @@
         </p>
       </div>
       <div class="header-actions">
-        <button class="g-btn g-btn-secondary hide-mobile" @click="store.fetchAll()">
+        <button class="g-btn g-btn-secondary hide-mobile" :disabled="!filtered.length" @click="exportList">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -229,6 +229,13 @@ const stats    = computed(() => store.stats)
 
 // Load real data when the product list opens
 onMounted(() => { store.fetchAll() })
+
+// Exportiert genau das, was die aktive Filterung gerade zeigt –
+// so entspricht die Datei dem, was der Nutzer vor sich hat.
+const { exportProductsCsv } = useDppExport()
+function exportList() {
+  exportProductsCsv(filtered.value)
+}
 
 const statusFilters = computed(() => [
   { value: 'all',   label: t('products.filters.all'),   color: 'var(--color-text-3)', count: products.value.length },

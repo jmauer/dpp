@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import type { UserRole } from './auth'
-import type { Database } from '~/types/database'
 
 // ─────────────────────────────────────────────
 // Types
@@ -39,6 +38,44 @@ function buildInitials(first: string, last: string, fallback: string): string {
   return initials || (fallback.trim()[0]?.toUpperCase() ?? '?')
 }
 
+/**
+ * Normalize a raw user object from the backend into a `TeamUser`.
+ * Accepts both PascalCase (e.g. `FirstName`, `EMail`) and camelCase keys
+ * so it survives small backend response differences.
+ */
+function normalizeUser(raw: unknown): TeamUser | null {
+  if (!raw || typeof raw !== 'object') return null
+  const u = raw as Record<string, unknown>
+
+  const pick = (...keys: string[]): string => {
+    for (const k of keys) {
+      if (u[k] != null && u[k] !== '') return String(u[k])
+    }
+    return ''
+  }
+
+  const personalNummer = pick('PersonalNummer', 'personalNummer', 'personalnummer')
+  const firstName      = pick('FirstName', 'firstName', 'firstname')
+  const lastName       = pick('LastName', 'lastName', 'lastname')
+  const email          = pick('EMail', 'email', 'eMail', 'Email')
+  const role           = (pick('Role', 'role').toLowerCase() || 'viewer') as UserRole
+  const id             = pick('id', 'Id', 'ID', 'PersonalNummer', 'personalNummer') || email
+  const name           = `${firstName} ${lastName}`.trim() || email
+
+  if (!id && !email) return null
+
+  return {
+    id,
+    personalNummer,
+    firstName,
+    lastName,
+    name,
+    email,
+    role,
+    initials: buildInitials(firstName, lastName, name),
+  }
+}
+
 // ─────────────────────────────────────────────
 // Store
 // ─────────────────────────────────────────────
@@ -63,35 +100,10 @@ export const useUsersStore = defineStore('users', () => {
     isLoading.value = true
     error.value     = null
     try {
-      // RLS gibt genau die Profile des eigenen Mandanten frei.
-      const supabase = useSupabaseClient<Database>()
-      const { data, error: e } = await supabase
-        .from('profiles')
-        .select('id, personal_number, first_name, last_name, email, role')
-        .order('last_name', { ascending: true })
-
-      if (e) throw new Error(e.message)
-
-      _users.value = (data ?? []).map(r => {
-        const row = r as {
-          id: string; personal_number: string | null
-          first_name: string | null; last_name: string | null
-          email: string; role: UserRole
-        }
-        const firstName = row.first_name ?? ''
-        const lastName  = row.last_name  ?? ''
-        const name      = `${firstName} ${lastName}`.trim() || row.email
-        return {
-          id:             row.id,
-          personalNummer: row.personal_number ?? '',
-          firstName,
-          lastName,
-          name,
-          email:          row.email,
-          role:           row.role,
-          initials:       buildInitials(firstName, lastName, name),
-        }
-      })
+      const { apiFetch } = useApi()
+      const data = await apiFetch<unknown>('/getUser')
+      const list = Array.isArray(data) ? data : (data ? [data] : [])
+      _users.value = list.map(normalizeUser).filter((u): u is TeamUser => u !== null)
     } catch (e: any) {
       error.value = e?.message ?? 'Fehler beim Laden der Benutzer'
       console.error('[UsersStore] fetchAll:', e)
@@ -109,42 +121,71 @@ export const useUsersStore = defineStore('users', () => {
     isSaving.value = true
     error.value    = null
     try {
-      // Benutzer anlegen geht nur serverseitig (Admin-API mit service_role).
-      // Siehe server/api/team/invite.post.ts - dort wird auch geprueft,
-      // dass der Aufrufer Administrator ist.
-      const created = await $fetch<{
-        id: string; email: string; firstName: string
-        lastName: string; role: UserRole; personalNummer: string
-      }>('/api/team/invite', {
-        method: 'POST',
-        body: {
-          personalNummer: payload.personalNummer,
-          firstName:      payload.firstName,
-          lastName:       payload.lastName,
-          email:          payload.email,
-          password:       payload.password,
-          role:           payload.role,
-        },
-      })
-
-      const name = `${created.firstName} ${created.lastName}`.trim() || created.email
-      const user: TeamUser = {
-        id:             created.id,
-        personalNummer: created.personalNummer,
-        firstName:      created.firstName,
-        lastName:       created.lastName,
-        name,
-        email:          created.email,
-        role:           created.role,
-        initials:       buildInitials(created.firstName, created.lastName, name),
+      const { apiFetch } = useApi()
+      const body = {
+        PersonalNummer: payload.personalNummer,
+        FirstName:      payload.firstName,
+        LastName:       payload.lastName,
+        Password:       payload.password,
+        Role:           payload.role,
+        EMail:          payload.email,
       }
-      _users.value = [user, ..._users.value]
-      return user
+      const saved = await apiFetch<unknown>('/createUser', { method: 'POST', body })
+
+      // Use the server response if it returns the created user, otherwise
+      // fall back to the data we just submitted.
+      const created = normalizeUser(saved) ?? normalizeUser({ ...body, id: payload.personalNummer })
+      if (created) _users.value = [created, ..._users.value]
+      return created
     } catch (e: any) {
-      error.value = e?.data?.statusMessage ?? e?.statusMessage
-                 ?? e?.message ?? 'Fehler beim Anlegen des Benutzers'
+      error.value = e?.message ?? 'Fehler beim Anlegen des Benutzers'
       console.error('[UsersStore] create:', e)
       return null
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  /**
+   * Konto sperren. Der Datensatz bleibt erhalten, die Anmeldung wird
+   * serverseitig abgelehnt – ein Administrator kann das zuruecknehmen.
+   */
+  async function deactivate(user: Pick<TeamUser, 'personalNummer' | 'email'>): Promise<boolean> {
+    isSaving.value = true
+    error.value    = null
+    try {
+      const { apiFetch } = useApi()
+      await apiFetch('/deactivateUser', {
+        method: 'POST',
+        body:   { PersonalNummer: user.personalNummer, EMail: user.email },
+      })
+      _users.value = _users.value.filter(u => u.email !== user.email)
+      return true
+    } catch (e: any) {
+      error.value = e?.message ?? 'Konto konnte nicht gesperrt werden'
+      console.error('[UsersStore] deactivate:', e)
+      return false
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  /** Konto endgueltig loeschen. Nicht umkehrbar. */
+  async function remove(user: Pick<TeamUser, 'personalNummer' | 'email'>): Promise<boolean> {
+    isSaving.value = true
+    error.value    = null
+    try {
+      const { apiFetch } = useApi()
+      await apiFetch('/deleteUser', {
+        method: 'POST',
+        body:   { PersonalNummer: user.personalNummer, EMail: user.email },
+      })
+      _users.value = _users.value.filter(u => u.email !== user.email)
+      return true
+    } catch (e: any) {
+      error.value = e?.message ?? 'Konto konnte nicht gelöscht werden'
+      console.error('[UsersStore] remove:', e)
+      return false
     } finally {
       isSaving.value = false
     }
@@ -160,5 +201,7 @@ export const useUsersStore = defineStore('users', () => {
     // actions
     fetchAll,
     create,
+    deactivate,
+    remove,
   }
 })

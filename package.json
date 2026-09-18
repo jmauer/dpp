@@ -8,6 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "build:flask": "node scripts/build-flask.mjs",
+    "preview:flask": "node scripts/preview-flask.mjs",
     "deploy:zip": "npm run generate && cd .output/public && zip -r -q ../../dpp-dashboard-static.zip . -x '.DS_Store' && echo 'dpp-dashboard-static.zip erstellt'"
   },
   "dependencies": {

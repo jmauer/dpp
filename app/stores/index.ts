@@ -3,4 +3,6 @@ export { useAuthStore }          from './auth'
 export { useProductsStore }      from './products'
 export { useNotificationsStore } from './notifications'
 export { useUsersStore }         from './users'
+export { useSettingsStore }      from './settings'
+export { useTourStore }          from './tour'
 

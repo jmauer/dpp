@@ -133,11 +133,16 @@ export const useNotificationsStore = defineStore('notifications', () => {
     _items.value = _items.value.filter(n => n.id !== id)
   }
 
-  function push(notification: Omit<Notification, 'id' | 'createdAt'>) {
+  /**
+   * Meldung einfuegen. `id` ist optional: wird eine mitgegeben, bleibt sie
+   * erhalten – das brauchen automatisch erzeugte Meldungen (siehe
+   * `syncFromProducts`), um sich bei einem erneuten Lauf wiederzuerkennen.
+   */
+  function push(notification: Omit<Notification, 'id' | 'createdAt'> & { id?: string }) {
     _items.value = [
       {
         ...notification,
-        id:        `n-${Date.now()}`,
+        id:        notification.id ?? `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         createdAt: new Date().toISOString(),
       },
       ..._items.value,
@@ -161,7 +166,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (_items.value.some(n => n.id === existingId)) return
 
       push({
-        id:           existingId as any,  // overridden inside push()
+        id:           existingId,
         type:         'gap_deadline',
         severity:     daysLeft <= 14 ? 'crit' : 'warn',
         title:        `${daysLeft <= 14 ? '⚠️ Kritisch' : 'Frist nähert sich'}: ${gap.label}`,

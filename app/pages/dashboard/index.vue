@@ -8,24 +8,24 @@
         <p class="g-page-sub">{{ t('dashboard.subtitle', { date: today }) }}</p>
       </div>
       <div class="header-actions">
-        <button class="g-btn g-btn-secondary hide-mobile">
+        <button class="g-btn g-btn-secondary hide-mobile" :disabled="!products.length" @click="exportOverview">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
           {{ t('common.export') }}
         </button>
-        <button class="g-btn g-btn-primary">
+        <NuxtLink to="/dashboard/products/new" class="g-btn g-btn-primary" data-tour="new-dpp">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
           <span class="hide-xs">{{ t('dashboard.newPassport') }}</span>
           <span class="show-xs">{{ t('common.new') }}</span>
-        </button>
+        </NuxtLink>
       </div>
     </div>
 
     <!-- ── KPI grid ── -->
-    <div class="kpi-grid g-grid-4">
+    <div class="kpi-grid g-grid-4" data-tour="kpis">
       <div v-for="kpi in kpis" :key="kpi.key" class="kpi-card g-card">
         <div class="kpi-icon" :style="{ background: kpi.iconBg, color: kpi.iconColor }" aria-hidden="true">
           {{ kpi.emoji }}
@@ -220,6 +220,13 @@ const firstName = computed(() => auth.user?.name.split(' ')[0] ?? '')
 
 // Data
 const products = computed(() => store.products)
+
+// Export der Gesamtuebersicht: dieselbe Tabelle wie in der Produktliste,
+// aber immer ueber den kompletten Bestand statt ueber die aktive Filterung.
+const { exportProductsCsv } = useDppExport()
+function exportOverview() {
+  exportProductsCsv(store.products, 'DPP-Uebersicht')
+}
 const stats    = computed(() => store.stats)
 
 // Load real data when the dashboard opens

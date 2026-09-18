@@ -117,14 +117,19 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'default', middleware: 'auth' })
-const { t } = useI18n()
-const store  = useProductsStore()
-const saved  = reactive<Record<string, boolean>>({})
 
-async function save(key: string) {
-  await new Promise(r => setTimeout(r, 500))
-  saved[key] = true
-  setTimeout(() => { saved[key] = false }, 3000)
+const { t }    = useI18n()
+const store    = useProductsStore()
+const settings = useSettingsStore()
+
+onMounted(() => { settings.fetchAll() })
+
+const regulations      = computed(() => settings.state.regulations)
+const deadlineSettings  = computed(() => settings.state.deadlines)
+const saved             = computed(() => settings.saved)
+
+function save(section: 'regs' | 'deadlines') {
+  return settings.save(section)
 }
 
 function formatDate(iso: string) {
@@ -136,23 +141,6 @@ function daysUntil(iso: string) {
 function statusBadge(s: string) {
   return { 'g-badge-ok': s==='ok', 'g-badge-crit': s==='crit', 'g-badge-warn': s==='warn', 'g-badge-neutral': s==='inactive' || s==='pending' }
 }
-
-const regulations = reactive([
-  { id: 'espr',    name: 'EU ESPR',                    description: 'Ökodesign-Verordnung für nachhaltige Produkte',                  isEu: true,  active: true,  status: 'warn', deadline: '2026-12-31', link: 'https://ec.europa.eu/environment/ecodesign' },
-  { id: 'battery', name: 'EU Batterieverordnung',      description: 'Nachhaltigkeits- und Sicherheitsanforderungen für Batterien',    isEu: true,  active: true,  status: 'crit', deadline: '2026-06-11', link: 'https://environment.ec.europa.eu/topics/waste-and-recycling/batteries_en' },
-  { id: 'reach',   name: 'REACH',                      description: 'Registrierung, Bewertung und Zulassung chemischer Stoffe',        isEu: true,  active: true,  status: 'warn', deadline: '2026-06-27', link: 'https://echa.europa.eu/regulations/reach/understanding-reach' },
-  { id: 'rohs',    name: 'RoHS',                       description: 'Beschränkung gefährlicher Stoffe in Elektro- und Elektronikgeräten', isEu: true, active: true, status: 'ok',   deadline: null,         link: 'https://ec.europa.eu/environment/topics/waste-and-recycling/rohs-directive_en' },
-  { id: 'ce',      name: 'CE-Kennzeichnung',           description: 'Konformitätskennzeichnung für den EU-Binnenmarkt',               isEu: true,  active: true,  status: 'ok',   deadline: null,         link: 'https://ec.europa.eu/growth/single-market/ce-marking_en' },
-  { id: 'lksg',    name: 'LkSG',                       description: 'Lieferkettensorgfaltspflichtengesetz (Deutschland)',              isEu: false, active: true,  status: 'warn', deadline: '2027-01-01', link: 'https://www.bafa.de/DE/Lieferketten/lieferketten_node.html' },
-  { id: 'lca',     name: 'ISO 14040 – LCA',            description: 'Lebenszyklusanalyse nach ISO-Norm',                              isEu: false, active: true,  status: 'warn', deadline: null,         link: 'https://www.iso.org/standard/37456.html' },
-  { id: 'iso9001', name: 'ISO 9001 Qualitätsmanagement',description: 'Qualitätsmanagementsystem-Zertifizierung',                     isEu: false, active: false, status: 'inactive', deadline: null,      link: 'https://www.iso.org/standard/62085.html' },
-])
-
-const deadlineSettings = reactive([
-  { key: 'critical', label: 'Kritische Warnung',  desc: 'E-Mail + Dashboard-Alert',                    days: 14 },
-  { key: 'warning',  label: 'Frühe Warnung',       desc: 'Dashboard-Hinweis',                           days: 30 },
-  { key: 'reminder', label: 'Erinnerung',          desc: 'Wöchentliche Erinnerungs-E-Mail ab dieser Vorlaufzeit', days: 60 },
-])
 
 const upcomingDeadlines = computed(() =>
   store.allOpenGaps

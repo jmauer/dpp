@@ -5,7 +5,12 @@ export default defineNuxtConfig({
   // SSR aktiv: noetig fuer den Legacy-API-Proxy (Mixed Content) und
   // damit die oeffentliche DPP-Seite /p/[id] serverseitig gerendert wird.
   // Nitro erkennt Vercel beim Deploy automatisch - kein Preset noetig.
-  ssr: true,
+  //
+  // NUXT_SSR=false schaltet auf reines SPA um. Das ist der Modus fuer das
+  // Flask-Deployment (scripts/build-flask.mjs): dort gibt es keinen Node-
+  // Prozess, der rendern koennte - Flask liefert nur eine index.html plus
+  // die Assets aus. Siehe DEPLOY-FLASK.md.
+  ssr: process.env.NUXT_SSR !== 'false',
 
   app: {
     // Nur relevant, wenn die App als statisches Bundle in einem
@@ -19,17 +24,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     '@nuxtjs/i18n',
-    '@nuxtjs/supabase',
   ],
 
-  supabase: {
-    // Die Absicherung macht app/middleware/auth.ts - sie kennt die
-    // oeffentlichen Routen (/login, /p/*) und den Rueckkehrpfad.
-    redirect: false,
-    // Keine generierten Typen: das Schema steht in app/types/database.ts
-    // und wird an useSupabaseClient<Database>() uebergeben.
-    types: false,
-  },
 
   googleFonts: {
     families: { 'DM Sans': [300, 400, 500, 600], 'DM Mono': [400, 500] },
@@ -91,7 +87,6 @@ export default defineNuxtConfig({
       alwaysRedirect: false,
       fallbackLocale: 'en',
     },
-    lazy: true,
   },
 
   devtools: { enabled: true },

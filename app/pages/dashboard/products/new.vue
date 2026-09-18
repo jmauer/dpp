@@ -15,7 +15,7 @@
     <form class="create-form" novalidate @submit.prevent="submit">
 
       <!-- ── Stammdaten ── -->
-      <section class="g-card form-card">
+      <section class="g-card form-card" data-tour="form-basics">
         <h2 class="section-title">Stammdaten</h2>
         <div class="form-grid">
           <div class="field">
@@ -58,7 +58,7 @@
       </section>
 
       <!-- ── Darstellung ── -->
-      <section class="g-card form-card">
+      <section class="g-card form-card" data-tour="form-appearance">
         <h2 class="section-title">Darstellung</h2>
         <div class="form-grid">
           <div class="field">
@@ -97,7 +97,7 @@
       </section>
 
       <!-- ── Nachhaltigkeit ── -->
-      <section class="g-card form-card">
+      <section class="g-card form-card" data-tour="form-sustainability">
         <h2 class="section-title">Nachhaltigkeitskennzahlen</h2>
         <div class="form-grid">
           <div class="field">
@@ -124,7 +124,7 @@
       </section>
 
       <!-- ── Materialien ── -->
-      <section class="g-card form-card">
+      <section class="g-card form-card" data-tour="form-materials">
         <div class="section-header">
           <h2 class="section-title">Materialzusammensetzung</h2>
           <button type="button" class="g-btn g-btn-secondary sm" @click="addMaterial">+ Material</button>
@@ -192,7 +192,7 @@
       <div v-if="store.error" class="error-msg" role="alert">{{ store.error }}</div>
 
       <!-- ── Footer ── -->
-      <div class="form-actions">
+      <div class="form-actions" data-tour="form-submit">
         <NuxtLink to="/dashboard/products" class="g-btn g-btn-secondary">Abbrechen</NuxtLink>
         <button type="submit" class="g-btn g-btn-primary" :disabled="store.isSaving || !canSubmit">
           <span v-if="!store.isSaving">Produktpass erstellen</span>
@@ -204,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Material, Regulation, SupplyStep, SupplyStage } from '~/stores/products'
+import type { DppGap, Material, Regulation, SupplyStep, SupplyStage } from '~/stores/products'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
@@ -253,6 +253,13 @@ const regulations = ref<Regulation[]>([])
 const supplyChain = ref<SupplyStep[]>([])
 const certificationsInput = ref('')
 
+/**
+ * Datenluecken werden im Formular nicht erfasst – sie entstehen sonst aus der
+ * Pruefung im Hintergrund. Die Beispieldaten der Einfuehrung tragen hier
+ * welche ein, damit der fertige Pass zeigt, wie Luecken aussehen.
+ */
+const gaps = ref<DppGap[]>([])
+
 const canSubmit = computed(() => form.name.trim().length > 0 && form.sku.trim().length > 0)
 
 function addMaterial()   { materials.value.push({ name: '', pct: 0, recycled: false }) }
@@ -260,6 +267,65 @@ function addRegulation() { regulations.value.push({ name: '', status: 'ok' }) }
 function addSupplyStep() {
   supplyChain.value.push({ stage: 'raw', label: stageLabels.raw, emoji: stageEmoji.raw, status: 'ok', supplier: '', country: '', co2: '' })
 }
+
+// ── Geführte Einführung ───────────────────
+// Die Führung bietet auf dem Formularschritt „Beispieldaten einfügen“ an.
+// Die Seite stellt die Aktion bereit, damit die Führung nichts über den
+// Aufbau des Formulars wissen muss.
+const tour = useTourStore()
+
+function prefillDemo() {
+  Object.assign(form, {
+    name:               'Elektromotor EM-400X',
+    sku:                'EM-400X',
+    category:           'Antriebstechnik',
+    description:        'Hocheffizienter Drehstrom-Asynchronmotor für industrielle Anwendungen. '
+                      + 'Wirkungsgradklasse IE4, wartungsarm, vollständig demontierbar.',
+    manufacturer:       'Muster GmbH',
+    manufacturingDate:  new Date().toISOString().slice(0, 10),
+    countryOfOrigin:    'Deutschland',
+    weight:             '48 kg',
+    emoji:              '⚡',
+    iconBg:             '#E1F5EE',
+    iconColor:          '#0F6E56',
+    co2Total:           '184 kg CO₂e',
+    energyClass:        'IE4',
+    // Bewusst offen gelassen – daraus entstehen unten die beiden Lücken.
+    repairabilityIndex: 0,
+    recyclingRate:      '',
+    completeness:       72,
+  })
+
+  materials.value = [
+    { name: 'Elektroblech', pct: 46, recycled: false },
+    { name: 'Kupfer',       pct: 28, recycled: true  },
+    { name: 'Aluminium',    pct: 18, recycled: true  },
+    { name: 'Kunststoff',   pct:  8, recycled: false },
+  ]
+
+  regulations.value = [
+    { name: 'EU ESPR', status: 'warn' },
+    { name: 'RoHS',    status: 'ok'   },
+    { name: 'CE',      status: 'ok'   },
+  ]
+
+  supplyChain.value = [
+    { stage: 'raw',           label: stageLabels.raw,           emoji: stageEmoji.raw,           status: 'ok',      supplier: 'Aurubis AG',        country: 'Deutschland', co2: '96 kg CO₂e' },
+    { stage: 'manufacturing', label: stageLabels.manufacturing, emoji: stageEmoji.manufacturing, status: 'ok',      supplier: 'Muster GmbH',       country: 'Deutschland', co2: '54 kg CO₂e' },
+    { stage: 'logistics',     label: stageLabels.logistics,     emoji: stageEmoji.logistics,     status: 'warn',    supplier: 'Spedition Nord',    country: 'Deutschland', co2: '34 kg CO₂e' },
+    { stage: 'endoflife',     label: stageLabels.endoflife,     emoji: stageEmoji.endoflife,     status: 'neutral', supplier: '',                  country: '',            co2: '' },
+  ]
+
+  gaps.value = [
+    { id: 'demo-gap-1', label: 'Reparierbarkeitsindex fehlt', type: 'missing',    regulation: 'EU ESPR', deadline: '2026-12-31' },
+    { id: 'demo-gap-2', label: 'Recyclingquote nicht belegt', type: 'unverified', regulation: 'EU ESPR', deadline: '2027-03-31' },
+  ]
+
+  certificationsInput.value = 'ISO 9001, IEC 60034'
+}
+
+onMounted(()       => tour.registerAction('prefill-product', prefillDemo))
+onBeforeUnmount(() => tour.unregisterAction('prefill-product'))
 
 async function submit() {
   if (!canSubmit.value) return
@@ -281,7 +347,7 @@ async function submit() {
     repairabilityIndex: form.repairabilityIndex,
     recyclingRate:      form.recyclingRate,
     completeness:       form.completeness,
-    gaps:               [],
+    gaps:               gaps.value,
     materials:          materials.value.filter(m => m.name.trim()),
     regulations:        regulations.value.filter(r => r.name.trim()),
     supplyChain:        supplyChain.value

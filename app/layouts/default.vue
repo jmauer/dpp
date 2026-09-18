@@ -50,7 +50,7 @@
         </div>
 
         <!-- Nav -->
-        <nav class="sidebar-nav" role="menubar">
+        <nav class="sidebar-nav" role="menubar" data-tour="nav">
           <div class="nav-section-label">{{ t('nav.overview') }}</div>
 
           <NuxtLink
@@ -195,7 +195,7 @@
           <LanguageSwitcher />
 
           <!-- Notifications -->
-          <div class="notif-wrap" ref="notifRef">
+          <div class="notif-wrap" ref="notifRef" data-tour="notifications">
             <button
               class="icon-btn notif-btn"
               :aria-label="`${t('nav.notifications')} ${notifs.unreadCount > 0 ? `(${notifs.unreadCount})` : ''}`"
@@ -294,6 +294,10 @@
       </nav>
 
     </div>
+
+    <!-- Geführte Einführung – liegt über allem, teleportiert sich selbst -->
+    <TourSpotlight />
+
   </div>
 </template>
 

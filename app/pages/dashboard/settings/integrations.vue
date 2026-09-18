@@ -24,7 +24,13 @@
         <div class="g-card keys-card">
           <div v-for="key in apiKeys" :key="key.id" class="key-row">
             <div class="key-left">
-              <div class="key-name">{{ key.name }}</div>
+              <input
+                v-model.trim="key.name"
+                class="key-name-input"
+                :aria-label="`Name des Schlüssels ${key.name}`"
+                placeholder="Name des Schlüssels"
+                @change="persist"
+              />
               <div class="key-meta">
                 <span v-for="s in key.scopes" :key="s" class="scope-tag">{{ s }}</span>
               </div>
@@ -37,6 +43,7 @@
             <div class="key-right">
               <code
                 class="key-value"
+                :class="{ copied: copiedKey === key.id }"
                 :title="t('common.copy')"
                 @click="copyKey(key.id)"
               >
@@ -105,8 +112,20 @@
           <div v-for="wh in webhooks" :key="wh.id" class="webhook-row">
             <div class="wh-status-dot" :class="wh.active ? 'dot-ok' : 'dot-neutral'" :aria-label="wh.active ? 'Aktiv' : 'Inaktiv'"/>
             <div class="wh-info">
-              <div class="wh-url mono">{{ wh.url }}</div>
-              <div class="wh-events">{{ wh.events.join(' · ') }}</div>
+              <input
+                v-model.trim="wh.url"
+                type="url"
+                class="wh-url-input mono"
+                :aria-label="`Ziel-URL des Webhooks`"
+                placeholder="https://erp.meinefirma.de/hooks/dpp"
+                @change="persist"
+              />
+              <div class="wh-events">
+                <label v-for="ev in webhookEvents" :key="ev" class="wh-event-chip" :class="{ active: wh.events.includes(ev) }">
+                  <input type="checkbox" :checked="wh.events.includes(ev)" @change="toggleWebhookEvent(wh, ev)" />
+                  {{ ev }}
+                </label>
+              </div>
             </div>
             <div class="wh-last">
               <span class="wh-status-code" :class="wh.lastStatus === 200 ? 'code-ok' : 'code-err'">
@@ -115,13 +134,13 @@
               <span class="wh-time">{{ wh.lastFired ?? 'Nie' }}</span>
             </div>
             <label class="g-toggle" :aria-label="`Webhook ${wh.url} ${wh.active ? 'deaktivieren' : 'aktivieren'}`">
-              <input type="checkbox" v-model="wh.active" />
+              <input type="checkbox" v-model="wh.active" @change="persist" />
               <span class="g-toggle-track" />
             </label>
             <button
               class="icon-action danger"
               :aria-label="`Webhook ${wh.url} löschen`"
-              @click="webhooks.splice(webhooks.indexOf(wh), 1)"
+              @click="deleteWebhook(wh.id)"
             >
               <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                 <path d="M4 6h12M8 6V4h4v2M7 6v10h6V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -173,87 +192,132 @@
 </template>
 
 <script setup lang="ts">
+import type { SystemIntegration, Webhook } from '~/stores/settings'
+
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const { t }    = useI18n()
-const revealed = ref<string | null>(null)
+const settings = useSettingsStore()
+
+onMounted(() => { settings.fetchAll() })
+
+const apiKeys      = computed(() => settings.state.integrations.apiKeys)
+const webhooks     = computed(() => settings.state.integrations.webhooks)
+const integrations = computed(() => settings.state.integrations.systems)
+
+const revealed   = ref<string | null>(null)
+const copiedKey  = ref<string | null>(null)
+
+/**
+ * Diese Seite hat bewusst keinen Speichern-Button: jede Aenderung ist eine
+ * abgeschlossene Aktion (Schluessel anlegen, Webhook abschalten). Deshalb
+ * wird nach jeder Mutation direkt persistiert.
+ */
+function persist() {
+  return settings.save('integrations')
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-async function copyKey(id: string) {
-  const key = apiKeys.find(k => k.id === id)
-  if (key) await navigator.clipboard.writeText(key.value)
-}
-
 // ── API Keys ──────────────────────────────
 
-const apiKeys = reactive([
-  {
-    id: 'k1', name: 'Produktion – ERP Sync',
-    scopes: ['read', 'write'],
-    createdAt: '2026-01-15', lastUsed: 'Heute',
-    value: 'ppdpp_live_sk_4fX9mK2rTqNvLa8hWbEzCjPYsUo',
-  },
-  {
-    id: 'k2', name: 'Staging – Test-Umgebung',
-    scopes: ['read'],
-    createdAt: '2026-03-08', lastUsed: 'vor 3 Tagen',
-    value: 'ppdpp_test_sk_7gR3cN5wBmHkPd6yAeVfZxJiSqTu',
-  },
-])
+async function copyKey(id: string) {
+  const key = apiKeys.value.find(k => k.id === id)
+  if (!key) return
+  try {
+    await navigator.clipboard.writeText(key.value)
+    copiedKey.value = id
+    setTimeout(() => { if (copiedKey.value === id) copiedKey.value = null }, 2000)
+  } catch {
+    // Clipboard ohne Nutzergeste oder ohne https – dann wenigstens aufdecken,
+    // damit der Wert von Hand kopiert werden kann.
+    revealed.value = id
+  }
+}
 
-function createKey() {
-  apiKeys.push({
-    id:        `k${Date.now()}`,
+/**
+ * Schluesselwert erzeugen. `crypto.getRandomValues` statt Math.random:
+ * ein API-Schluessel darf nicht vorhersagbar sein.
+ */
+function generateKeyValue(): string {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  const body = Array.from(bytes, b => alphabet[b % alphabet.length]).join('')
+  return `ppdpp_live_sk_${body}`
+}
+
+async function createKey() {
+  const id = `k-${Date.now()}`
+  settings.state.integrations.apiKeys.push({
+    id,
     name:      'Neuer API-Schlüssel',
     scopes:    ['read'],
     createdAt: new Date().toISOString().slice(0, 10),
-    lastUsed:  null as any,
-    value:     'ppdpp_live_sk_' + Math.random().toString(36).slice(2, 34),
+    lastUsed:  null,
+    value:     generateKeyValue(),
   })
+  revealed.value = id   // einmal zeigen – danach ist er nur noch maskiert sichtbar
+  await persist()
 }
 
-function deleteKey(id: string) {
-  const idx = apiKeys.findIndex(k => k.id === id)
-  if (idx >= 0) apiKeys.splice(idx, 1)
+async function deleteKey(id: string) {
+  const key = apiKeys.value.find(k => k.id === id)
+  if (!key) return
+  if (!confirm(`Schlüssel „${key.name}" endgültig löschen? Systeme, die ihn verwenden, verlieren den Zugriff.`)) return
+
+  const idx = settings.state.integrations.apiKeys.findIndex(k => k.id === id)
+  if (idx >= 0) settings.state.integrations.apiKeys.splice(idx, 1)
+  if (revealed.value === id) revealed.value = null
+  await persist()
 }
 
 // ── Webhooks ──────────────────────────────
 
-const webhooks = reactive([
-  { id: 'wh1', url: 'https://erp.mustergmbh.de/hooks/dpp',  events: ['gap.created', 'product.updated'], active: true,  lastStatus: 200, lastFired: 'vor 2 Std.' },
-  { id: 'wh2', url: 'https://n8n.intern/webhook/compliance', events: ['compliance.changed'],             active: false, lastStatus: 500, lastFired: 'vor 2 Tagen' },
-])
+const webhookEvents = [
+  'product.created',
+  'product.updated',
+  'gap.created',
+  'gap.resolved',
+  'compliance.changed',
+]
 
-function addWebhook() {
-  webhooks.push({
-    id:         `wh${Date.now()}`,
-    url:        'https://',
+async function addWebhook() {
+  settings.state.integrations.webhooks.push({
+    id:         `wh-${Date.now()}`,
+    url:        '',
     events:     ['product.updated'],
     active:     false,
-    lastStatus: null as any,
-    lastFired:  null as any,
+    lastStatus: null,
+    lastFired:  null,
   })
+  await persist()
 }
 
-// ── System integrations ───────────────────
+async function deleteWebhook(id: string) {
+  const idx = settings.state.integrations.webhooks.findIndex(w => w.id === id)
+  if (idx < 0) return
+  settings.state.integrations.webhooks.splice(idx, 1)
+  await persist()
+}
 
-const integrations = reactive([
-  { id: 'sap',        icon: '🏢', name: 'SAP S/4HANA',       desc: 'Materialstammdaten und Stücklisten synchronisieren',            connected: true,  since: 'Jan 2026' },
-  { id: 'teamcenter', icon: '⚙️', name: 'Teamcenter PLM',    desc: 'Produktdaten und Revisionen aus Siemens Teamcenter importieren', connected: false, since: null },
-  { id: 'excel',      icon: '📊', name: 'Excel / CSV Import', desc: 'Massenimport von Produktdaten über Excel-Vorlagen',             connected: true,  since: 'Feb 2026' },
-  { id: 'envirosuite',icon: '🔬', name: 'Envirosuite',        desc: 'CO₂- und Umweltdaten aus Messsystemen übernehmen',              connected: false, since: null },
-  { id: 'sharepoint', icon: '📁', name: 'SharePoint',         desc: 'Zertifikate und Dokumente aus SharePoint verknüpfen',           connected: false, since: null },
-  { id: 'rest',       icon: '🔗', name: 'REST API (Push)',    desc: 'Beliebiges System per REST API Push-Integration anbinden',      connected: false, since: null },
-])
+async function toggleWebhookEvent(webhook: Webhook, event: string) {
+  webhook.events = webhook.events.includes(event)
+    ? webhook.events.filter(e => e !== event)
+    : [...webhook.events, event]
+  await persist()
+}
 
-function toggleIntegration(int: typeof integrations[0]) {
+// ── System-Integrationen ──────────────────
+
+async function toggleIntegration(int: SystemIntegration) {
   int.connected = !int.connected
-  if (int.connected) {
-    int.since = new Date().toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })
-  }
+  int.since = int.connected
+    ? new Date().toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })
+    : null
+  await persist()
 }
 </script>
 
@@ -351,4 +415,32 @@ function toggleIntegration(int: typeof integrations[0]) {
   .key-value { max-width: 140px; }
   .wh-last { display: none; }
 }
+
+.key-name-input {
+  font-size: 13px; font-weight: 500; color: var(--color-text-1);
+  background: none; border: 1px solid transparent; border-radius: 6px;
+  padding: 2px 6px; margin-left: -6px; width: 100%; max-width: 280px;
+}
+.key-name-input:hover { border-color: var(--color-border); }
+.key-name-input:focus { border-color: var(--color-brand); outline: none; background: var(--color-surface); }
+
+.key-value.copied { color: var(--color-ok); }
+
+.wh-url-input {
+  font-size: 12px; width: 100%;
+  background: none; border: 1px solid transparent; border-radius: 6px;
+  padding: 2px 6px; margin-left: -6px; color: var(--color-text-1);
+}
+.wh-url-input:hover { border-color: var(--color-border); }
+.wh-url-input:focus { border-color: var(--color-brand); outline: none; background: var(--color-surface); }
+
+.wh-events { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.wh-event-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; padding: 2px 7px; border-radius: 999px;
+  border: 1px solid var(--color-border); color: var(--color-text-3);
+  cursor: pointer; user-select: none;
+}
+.wh-event-chip input { display: none; }
+.wh-event-chip.active { border-color: var(--color-brand); color: var(--color-brand); }
 </style>

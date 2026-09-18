@@ -7,7 +7,7 @@
         <p class="page-sub">Übersicht über alle geltenden EU-Verordnungen und deren Erfüllungsgrad</p>
       </div>
       <div class="header-actions">
-        <button class="btn-secondary">
+        <button class="btn-secondary" :disabled="!store.allOpenGaps.length" @click="exportReport">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 14v3h14v-3M10 3v10M7 10l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Compliance-Bericht
         </button>
@@ -155,6 +155,12 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const store = useProductsStore()
 const selectedReg = ref<string | null>(null)
+
+// Compliance-Bericht: alle offenen Luecken mit Frist und Regulierung als CSV.
+const { exportGapsCsv } = useDppExport()
+function exportReport() {
+  exportGapsCsv('DPP-Compliance-Bericht')
+}
 
 const regulations = [
   { name: 'EU ESPR', shortName: 'ESPR', description: 'Ökodesign-Verordnung – Nachhaltigkeit & Reparierbarkeit', overall: 'warn', pct: 80, deadline: '31. Dezember 2026' },

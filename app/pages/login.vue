@@ -57,7 +57,8 @@
       </form>
 
       <div class="demo-hint">
-        Zugangsdaten erhalten Sie von Ihrer Administration.
+        <strong>Demo-Zugangsdaten:</strong><br>
+        <code>demo@passport-dpp.de</code> / <code>Demo12!</code>
       </div>
     </div>
   </div>
@@ -67,6 +68,7 @@
 definePageMeta({ layout: 'auth', middleware: 'auth' })
 
 const auth = useAuthStore()
+const tour = useTourStore()
 const router = useRouter()
 
 const email    = ref('')
@@ -75,7 +77,13 @@ const showPw   = ref(false)
 
 async function handleLogin() {
   const ok = await auth.login({ email: email.value, password: password.value })
-  if (ok) router.push('/dashboard')
+  if (!ok) return
+
+  await router.push('/dashboard')
+  // Beim allerersten Login dieses Kontos die Einführung anbieten. Wer sie
+  // einmal beendet hat, bekommt sie nicht wieder – nur noch auf Wunsch
+  // über Einstellungen → Einführung.
+  tour.startIfFirstVisit(email.value)
 }
 </script>
 

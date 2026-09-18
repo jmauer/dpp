@@ -45,6 +45,30 @@
     "privacy": "Confidentialité",
     "imprint": "Mentions légales"
   },
+  "dashboard": {
+    "greeting": "Bonjour, {name}",
+    "subtitle": "Votre aperçu DPP pour {date}",
+    "newPassport": "Nouveau DPP",
+    "exportReport": "Exporter le rapport",
+    "kpi": {
+      "activePassports": "Passeports actifs",
+      "complianceRate": "Taux de conformité",
+      "openGaps": "Lacunes ouvertes",
+      "suppliers": "Fournisseurs",
+      "thisMonth": "+{n} ce mois-ci",
+      "vsLastMonth": "+{n} % vs mois précédent",
+      "critical": "{n} critiques",
+      "verified": "{n} % vérifiés"
+    },
+    "sections": {
+      "passports": "Passeports produits",
+      "viewAll": "Tout afficher",
+      "regulations": "Réglementation",
+      "details": "Détails",
+      "supplyChain": "Chaîne d'approvisionnement",
+      "activities": "Activité récente"
+    }
+  },
   "products": {
     "title": "Passeports produits",
     "subtitle": "{filtered} sur {total} produits",
@@ -57,6 +81,14 @@
       "warn": "Incomplet",
       "crit": "Critique",
       "draft": "Brouillon"
+    },
+    "columns": {
+      "product": "Produit",
+      "category": "Catégorie",
+      "completeness": "Exhaustivité",
+      "status": "Statut",
+      "gaps": "Lacunes",
+      "compliance": "Conformité"
     },
     "status": {
       "ok": "Complet",
@@ -71,6 +103,42 @@
       "outdated": "Obsolète",
       "unverified": "Non vérifié"
     },
+    "detail": {
+      "back": "Passeports produits",
+      "publicView": "Vue publique",
+      "exportReport": "Exporter le rapport",
+      "qrCode": "Code QR",
+      "completeness": "Exhaustivité du DPP",
+      "allComplete": "Tous les champs obligatoires sont remplis",
+      "openGaps": "{n} lacune de données ouverte | {n} lacunes de données ouvertes",
+      "sections": {
+        "productInfo": "Informations produit",
+        "materials": "Composition des matériaux",
+        "gaps": "Lacunes de données ouvertes ({n})",
+        "regulations": "Réglementation et conformité",
+        "supplyChain": "Chaîne d'approvisionnement",
+        "certifications": "Certifications"
+      },
+      "fields": {
+        "manufacturer": "Fabricant",
+        "countryOfOrigin": "Pays de fabrication",
+        "manufacturingDate": "Date de fabrication",
+        "weight": "Poids",
+        "energyClass": "Classe énergétique",
+        "co2Total": "Bilan CO₂ total",
+        "repairability": "Indice de réparabilité",
+        "recyclingRate": "Taux de recyclage"
+      },
+      "qr": {
+        "title": "Passeport produit public",
+        "publicBadge": "Accessible sans connexion",
+        "hint": "Ce code QR renvoie au passeport produit public – consultable sans compte.",
+        "copyUrl": "Copier",
+        "copied": "Copié !",
+        "download": "Télécharger le QR",
+        "share": "Partager"
+      }
+    },
     "sort": {
       "updated": "Last updated",
       "name": "Name",
@@ -78,6 +146,182 @@
       "gaps": "Open gaps",
       "direction": "Sort direction"
     }
+  },
+  "supplyChain": {
+    "title": "Chaîne d'approvisionnement",
+    "subtitle": "Transparence sur toutes les étapes · {products} produits · {suppliers} fournisseurs",
+    "addSupplier": "Ajouter un fournisseur",
+    "stages": {
+      "raw": "Matières premières",
+      "preproduction": "Préproduction",
+      "manufacturing": "Fabrication",
+      "logistics": "Logistique",
+      "endoflife": "Fin de vie"
+    },
+    "status": {
+      "ok": "Vérifié",
+      "warn": "Incomplet",
+      "neutral": "Non renseigné"
+    },
+    "fields": {
+      "supplier": "Fournisseur",
+      "country": "Pays",
+      "co2": "CO₂",
+      "certifiedUntil": "Certifié jusqu'au",
+      "notCaptured": "Non renseigné"
+    },
+    "kpi": {
+      "totalSuppliers": "Fournisseurs au total",
+      "supplyGaps": "Lacunes chaîne d'approvisionnement",
+      "countries": "Pays",
+      "avgCo2": "CO₂ moyen par produit",
+      "euShare": "Part UE {n} %",
+      "critical": "{n} critiques"
+    },
+    "allSuppliers": "Tous les fournisseurs",
+    "filterAll": "Tous",
+    "filterVerified": "Vérifiés",
+    "filterPending": "En attente",
+    "filterCritical": "Critiques",
+    "searchProducts": "Rechercher des produits…",
+    "selectProduct": "Sélectionner un produit"
+  },
+  "compliance": {
+    "title": "Réglementation et conformité",
+    "subtitle": "Aperçu de toutes les réglementations européennes applicables",
+    "overallScore": "Score de conformité global",
+    "nextDeadline": "Prochaine échéance",
+    "regulations": "Réglementations en détail",
+    "matrix": "Matrice de conformité",
+    "matrixSub": "Tous les produits × toutes les réglementations",
+    "status": {
+      "ok": "Conforme",
+      "warn": "En cours",
+      "crit": "Critique",
+      "pending": "En attente",
+      "na": "N/A"
+    },
+    "expandProducts": "Statut par produit",
+    "nextDeadlineLabel": "Prochaine échéance",
+    "legend": {
+      "ok": "Conforme",
+      "warn": "En cours",
+      "crit": "Critique",
+      "pending": "En attente",
+      "na": "Non applicable"
+    }
+  },
+  "reports": {
+    "title": "Rapports",
+    "subtitle": "Rapports de conformité et DPP exportables",
+    "newReport": "Nouveau rapport",
+    "history": "Historique des rapports",
+    "scheduled": "Rapports planifiés",
+    "stats": "Statistiques des rapports",
+    "status": {
+      "done": "Terminé",
+      "pending": "En cours de création",
+      "failed": "Échec"
+    },
+    "frequency": {
+      "monthly": "Mensuel",
+      "weekly": "Hebdomadaire",
+      "quarterly": "Trimestriel"
+    },
+    "formats": {
+      "pdf": "PDF",
+      "json": "JSON",
+      "xlsx": "XLSX",
+      "csv": "CSV"
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "sections": {
+      "account": "Compte",
+      "dpp": "Passeport produit numérique",
+      "system": "Système"
+    },
+    "nav": {
+      "profile": "Profil et sécurité",
+      "company": "Entreprise",
+      "dpp": "Configuration DPP",
+      "regulations": "Réglementation",
+      "notifications": "Notifications",
+      "integrations": "Intégrations et API",
+      "team": "Équipe et rôles"
+    },
+    "profile": {
+      "title": "Profil et sécurité",
+      "subtitle": "Données personnelles, mot de passe et sécurité de connexion",
+      "personalData": "Données personnelles",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Adresse e-mail",
+      "role": "Rôle",
+      "language": "Langue",
+      "saveChanges": "Enregistrer les modifications",
+      "saved": "✓ Enregistré",
+      "saving": "Enregistrement…",
+      "password": {
+        "title": "Changer le mot de passe",
+        "current": "Mot de passe actuel",
+        "new": "Nouveau mot de passe",
+        "confirm": "Confirmer le mot de passe",
+        "mismatch": "Les mots de passe ne correspondent pas.",
+        "change": "Changer le mot de passe",
+        "strength": {
+          "weak": "Trop faible",
+          "medium": "Moyen",
+          "good": "Bon",
+          "strong": "Fort"
+        }
+      },
+      "tfa": {
+        "title": "Authentification à deux facteurs",
+        "active": "● Actif",
+        "inactive": "○ Inactif",
+        "enable": "Activer la 2FA",
+        "disable": "Désactiver la 2FA",
+        "totp": "Application d'authentification",
+        "sms": "SMS",
+        "emailMethod": "E-mail"
+      },
+      "sessions": {
+        "title": "Sessions actives",
+        "current": "Actuelle",
+        "revokeAll": "Déconnecter tout",
+        "revoke": "Déconnecter"
+      },
+      "danger": {
+        "title": "Zone de danger",
+        "deactivate": "Désactiver le compte",
+        "delete": "Supprimer le compte"
+      }
+    },
+    "dpp": {
+      "title": "Configuration DPP",
+      "subtitle": "Paramètres globaux du passeport produit numérique",
+      "thresholds": "Seuils d'exhaustivité",
+      "requiredFields": "Champs obligatoires du DPP",
+      "addField": "+ Ajouter un champ",
+      "qrSection": "Code QR et URL publique",
+      "autoGap": "Détection automatique des lacunes de données",
+      "save": "Enregistrer",
+      "saved": "✓ Enregistré"
+    }
+  },
+  "public": {
+    "dppTitle": "Passeport produit numérique",
+    "verifiedBy": "Vérifié · Plateforme PassPort DPP",
+    "shareTitle": "Partager le passeport produit",
+    "shareHint": "Scannez ce code QR pour accéder directement au passeport produit.",
+    "whatIsDpp": "Qu'est-ce qu'un passeport produit numérique ?",
+    "dppExplained": "Le passeport produit numérique (DPP) est un instrument à l'échelle de l'UE visant à accroître la transparence des produits tout au long de la chaîne de valeur.",
+    "lastUpdated": "Dernière mise à jour",
+    "dppId": "Identifiant DPP",
+    "issuedBy": "Délivré par",
+    "notFound": "Passeport produit introuvable"
   },
   "common": {
     "loading": "Chargement…",

@@ -45,6 +45,30 @@
     "privacy": "Privacy",
     "imprint": "Legal notice"
   },
+  "dashboard": {
+    "greeting": "Goedemorgen, {name}",
+    "subtitle": "Uw DPP-overzicht voor {date}",
+    "newPassport": "Nieuw DPP",
+    "exportReport": "Rapport exporteren",
+    "kpi": {
+      "activePassports": "Actieve paspoorten",
+      "complianceRate": "Compliancepercentage",
+      "openGaps": "Openstaande hiaten",
+      "suppliers": "Leveranciers",
+      "thisMonth": "+{n} deze maand",
+      "vsLastMonth": "+{n} % t.o.v. vorige maand",
+      "critical": "{n} kritiek",
+      "verified": "{n} % geverifieerd"
+    },
+    "sections": {
+      "passports": "Productpaspoorten",
+      "viewAll": "Alles bekijken",
+      "regulations": "Regelgeving",
+      "details": "Details",
+      "supplyChain": "Toeleveringsketen",
+      "activities": "Recente activiteit"
+    }
+  },
   "products": {
     "title": "Productpaspoorten",
     "subtitle": "{filtered} van {total} producten",
@@ -57,6 +81,14 @@
       "warn": "Onvolledig",
       "crit": "Kritiek",
       "draft": "Concept"
+    },
+    "columns": {
+      "product": "Product",
+      "category": "Categorie",
+      "completeness": "Volledigheid",
+      "status": "Status",
+      "gaps": "Hiaten",
+      "compliance": "Compliance"
     },
     "status": {
       "ok": "Volledig",
@@ -71,6 +103,42 @@
       "outdated": "Verouderd",
       "unverified": "Niet geverifieerd"
     },
+    "detail": {
+      "back": "Productpaspoorten",
+      "publicView": "Openbare weergave",
+      "exportReport": "Rapport exporteren",
+      "qrCode": "QR-code",
+      "completeness": "DPP-volledigheid",
+      "allComplete": "Alle verplichte velden zijn ingevuld",
+      "openGaps": "{n} openstaand datahiaat | {n} openstaande datahiaten",
+      "sections": {
+        "productInfo": "Productinformatie",
+        "materials": "Materiaalsamenstelling",
+        "gaps": "Openstaande datahiaten ({n})",
+        "regulations": "Regelgeving en compliance",
+        "supplyChain": "Toeleveringsketen",
+        "certifications": "Certificaten"
+      },
+      "fields": {
+        "manufacturer": "Fabrikant",
+        "countryOfOrigin": "Land van productie",
+        "manufacturingDate": "Productiedatum",
+        "weight": "Gewicht",
+        "energyClass": "Energieklasse",
+        "co2Total": "Totale CO₂-balans",
+        "repairability": "Repareerbaarheidsindex",
+        "recyclingRate": "Recyclingpercentage"
+      },
+      "qr": {
+        "title": "Openbaar productpaspoort",
+        "publicBadge": "Toegankelijk zonder inloggen",
+        "hint": "Deze QR-code verwijst naar het openbare productpaspoort – leesbaar zonder account.",
+        "copyUrl": "Kopiëren",
+        "copied": "Gekopieerd!",
+        "download": "QR downloaden",
+        "share": "Delen"
+      }
+    },
     "sort": {
       "updated": "Last updated",
       "name": "Name",
@@ -78,6 +146,182 @@
       "gaps": "Open gaps",
       "direction": "Sort direction"
     }
+  },
+  "supplyChain": {
+    "title": "Toeleveringsketen",
+    "subtitle": "Transparantie over alle schakels · {products} producten · {suppliers} leveranciers",
+    "addSupplier": "Leverancier toevoegen",
+    "stages": {
+      "raw": "Grondstoffen",
+      "preproduction": "Voorproductie",
+      "manufacturing": "Productie",
+      "logistics": "Logistiek",
+      "endoflife": "Einde levensduur"
+    },
+    "status": {
+      "ok": "Geverifieerd",
+      "warn": "Onvolledig",
+      "neutral": "Niet vastgelegd"
+    },
+    "fields": {
+      "supplier": "Leverancier",
+      "country": "Land",
+      "co2": "CO₂",
+      "certifiedUntil": "Gecertificeerd tot",
+      "notCaptured": "Niet vastgelegd"
+    },
+    "kpi": {
+      "totalSuppliers": "Leveranciers totaal",
+      "supplyGaps": "Datahiaten toeleveringsketen",
+      "countries": "Landen",
+      "avgCo2": "Gem. CO₂ per product",
+      "euShare": "EU-aandeel {n} %",
+      "critical": "{n} kritiek"
+    },
+    "allSuppliers": "Alle leveranciers",
+    "filterAll": "Alle",
+    "filterVerified": "Geverifieerd",
+    "filterPending": "In afwachting",
+    "filterCritical": "Kritiek",
+    "searchProducts": "Producten zoeken…",
+    "selectProduct": "Product selecteren"
+  },
+  "compliance": {
+    "title": "Regelgeving en compliance",
+    "subtitle": "Overzicht van alle geldende EU-verordeningen",
+    "overallScore": "Totale compliancescore",
+    "nextDeadline": "Volgende deadline",
+    "regulations": "Verordeningen in detail",
+    "matrix": "Compliancematrix",
+    "matrixSub": "Alle producten × alle verordeningen",
+    "status": {
+      "ok": "Voldaan",
+      "warn": "In behandeling",
+      "crit": "Kritiek",
+      "pending": "In afwachting",
+      "na": "N.v.t."
+    },
+    "expandProducts": "Status per product",
+    "nextDeadlineLabel": "Volgende deadline",
+    "legend": {
+      "ok": "Voldaan",
+      "warn": "In behandeling",
+      "crit": "Kritiek",
+      "pending": "In afwachting",
+      "na": "Niet relevant"
+    }
+  },
+  "reports": {
+    "title": "Rapporten",
+    "subtitle": "Exporteerbare compliance- en DPP-rapporten",
+    "newReport": "Nieuw rapport",
+    "history": "Rapportgeschiedenis",
+    "scheduled": "Geplande rapporten",
+    "stats": "Rapportstatistieken",
+    "status": {
+      "done": "Gereed",
+      "pending": "Wordt aangemaakt",
+      "failed": "Fout"
+    },
+    "frequency": {
+      "monthly": "Maandelijks",
+      "weekly": "Wekelijks",
+      "quarterly": "Per kwartaal"
+    },
+    "formats": {
+      "pdf": "PDF",
+      "json": "JSON",
+      "xlsx": "XLSX",
+      "csv": "CSV"
+    }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "sections": {
+      "account": "Account",
+      "dpp": "Digitaal productpaspoort",
+      "system": "Systeem"
+    },
+    "nav": {
+      "profile": "Profiel en beveiliging",
+      "company": "Onderneming",
+      "dpp": "DPP-configuratie",
+      "regulations": "Regelgeving",
+      "notifications": "Meldingen",
+      "integrations": "Integraties en API",
+      "team": "Team en rollen"
+    },
+    "profile": {
+      "title": "Profiel en beveiliging",
+      "subtitle": "Persoonsgegevens, wachtwoord en aanmeldbeveiliging",
+      "personalData": "Persoonsgegevens",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "email": "E-mailadres",
+      "role": "Rol",
+      "language": "Taal",
+      "saveChanges": "Wijzigingen opslaan",
+      "saved": "✓ Opgeslagen",
+      "saving": "Opslaan…",
+      "password": {
+        "title": "Wachtwoord wijzigen",
+        "current": "Huidig wachtwoord",
+        "new": "Nieuw wachtwoord",
+        "confirm": "Wachtwoord bevestigen",
+        "mismatch": "Wachtwoorden komen niet overeen.",
+        "change": "Wachtwoord wijzigen",
+        "strength": {
+          "weak": "Te zwak",
+          "medium": "Gemiddeld",
+          "good": "Goed",
+          "strong": "Sterk"
+        }
+      },
+      "tfa": {
+        "title": "Tweefactorauthenticatie",
+        "active": "● Actief",
+        "inactive": "○ Inactief",
+        "enable": "2FA inschakelen",
+        "disable": "2FA uitschakelen",
+        "totp": "Authenticator-app",
+        "sms": "Sms",
+        "emailMethod": "E-mail"
+      },
+      "sessions": {
+        "title": "Actieve sessies",
+        "current": "Huidige",
+        "revokeAll": "Overal afmelden",
+        "revoke": "Afmelden"
+      },
+      "danger": {
+        "title": "Gevarenzone",
+        "deactivate": "Account deactiveren",
+        "delete": "Account verwijderen"
+      }
+    },
+    "dpp": {
+      "title": "DPP-configuratie",
+      "subtitle": "Systeembrede parameters voor het digitale productpaspoort",
+      "thresholds": "Drempelwaarden voor volledigheid",
+      "requiredFields": "Verplichte velden in het DPP",
+      "addField": "+ Veld toevoegen",
+      "qrSection": "QR-code en openbare URL",
+      "autoGap": "Automatische detectie van datahiaten",
+      "save": "Opslaan",
+      "saved": "✓ Opgeslagen"
+    }
+  },
+  "public": {
+    "dppTitle": "Digitaal productpaspoort",
+    "verifiedBy": "Geverifieerd · PassPort DPP-platform",
+    "shareTitle": "Productpaspoort delen",
+    "shareHint": "Scan deze QR-code om het productpaspoort direct te openen.",
+    "whatIsDpp": "Wat is een digitaal productpaspoort?",
+    "dppExplained": "Het digitale productpaspoort (DPP) is een EU-breed instrument om de transparantie van producten in de hele waardeketen te vergroten.",
+    "lastUpdated": "Laatst bijgewerkt",
+    "dppId": "DPP-ID",
+    "issuedBy": "Uitgegeven door",
+    "notFound": "Productpaspoort niet gevonden"
   },
   "common": {
     "loading": "Laden…",

@@ -250,71 +250,27 @@
 
 <script setup lang="ts">
 import QRCode from 'qrcode'
-import type { Database, PublicPassportRow } from '~/types/database'
 
 definePageMeta({ layout: 'public' })
 
-const route    = useRoute()
-const supabase = useSupabaseClient<Database>()
+const route = useRoute()
+const store = useProductsStore()
+const product = computed(() => store.getById(route.params.id as string))
 
-/**
- * Der Routenparameter ist der `public_slug` aus der Datenbank.
- * Gelesen wird die View `public_product_passports` - sie zeigt nur
- * freigegebene Produkte und blendet interne Felder (Mandant, Lueckenliste)
- * aus. Dadurch ist die Seite ohne Login abrufbar.
- *
- * useAsyncData statt onMounted: so wird der Pass serverseitig gerendert
- * und ist fuer Suchmaschinen und Link-Vorschauen sichtbar.
- */
-const slug = computed(() => String(route.params.id ?? ''))
-
-const { data: product } = await useAsyncData(
-  () => `passport-${slug.value}`,
-  async () => {
-    const { data, error } = await supabase
-      .from('public_product_passports')
-      .select('*')
-      .eq('public_slug', slug.value)
-      .maybeSingle()
-
-    if (error) {
-      console.error('[Passport] Laden fehlgeschlagen:', error.message)
-      return null
-    }
-    return data ? publicRowToProduct(data as unknown as PublicPassportRow) : null
-  },
-  { watch: [slug] },
-)
-
-// Nicht gefundene Paesse sollen auch wirklich 404 liefern, nicht 200.
-if (import.meta.server && !product.value) {
-  const event = useRequestEvent()
-  if (event) setResponseStatus(event, 404)
-}
-
-// SSR-sicher: useRequestURL kennt die Adresse auch ohne window.
-const currentUrl = computed(() => new URL(`/p/${slug.value}`, useRequestURL().origin).toString())
-
-useHead(() => ({
-  title: product.value ? `${product.value.name} – Digitaler Produktpass` : 'Produktpass nicht gefunden',
-  meta: product.value
-    ? [
-        { name: 'description', content: product.value.description },
-        { property: 'og:title', content: `${product.value.name} – Digitaler Produktpass` },
-        { property: 'og:description', content: product.value.description },
-        { property: 'og:url', content: currentUrl.value },
-      ]
-    : [{ name: 'robots', content: 'noindex' }],
-}))
-
+const currentUrl = ref('')
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
-const copied   = ref(false)
+const copied = ref(false)
 
-onMounted(() => renderQr())
+onMounted(() => {
+  currentUrl.value = window.location.href
+  store.fetchOne(route.params.id as string)
+  renderQr()
+})
+
 watch(qrCanvas, () => renderQr())
 
 async function renderQr() {
-  if (!qrCanvas.value) return
+  if (!qrCanvas.value || !currentUrl.value) return
   await QRCode.toCanvas(qrCanvas.value, currentUrl.value, {
     width: 200,
     margin: 1,
@@ -324,7 +280,6 @@ async function renderQr() {
 }
 
 function formatDate(d: string) {
-  if (!d) return '—'
   return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
@@ -579,4 +534,62 @@ function downloadQr() {
 .nf-inner h1 { font-size: 20px; font-weight: 600; }
 .nf-inner p  { font-size: 14px; color: var(--color-text-2); }
 .nf-link { font-size: 14px; color: var(--color-brand); text-decoration: none; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+  /* Hero */
+  .hero { flex-direction: column; gap: 16px; padding: 1.1rem; border-radius: 14px; }
+  .hero-left { gap: 12px; }
+  .hero-icon { width: 44px; height: 44px; font-size: 22px; border-radius: 10px; }
+  .hero-title { font-size: 19px; line-height: 1.25; }
+  .hero-meta { font-size: 12px; row-gap: 2px; }
+  .hero-right { width: 100%; min-width: 0; align-items: stretch; gap: 12px; }
+  .status-block { justify-content: flex-start; }
+  .verified-tag { align-self: flex-start; }
+
+  /* Cert strip */
+  .cert-strip { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 14px; }
+
+  /* Grid -> single column, sidebar below */
+  .content-grid { grid-template-columns: 1fr; gap: 12px; }
+  .content-right { position: static; top: auto; gap: 12px; }
+
+  /* Sections */
+  .section { padding: 1rem; border-radius: 12px; }
+  .section-text { font-size: 13px; }
+
+  /* Data table: stack key/value on very tight rows */
+  .data-row { gap: 12px; }
+  .data-key { flex-shrink: 0; }
+  .data-val { min-width: 0; word-break: break-word; }
+
+  /* Supply chain: allow wrapping so nothing gets squeezed */
+  .supply-chain { gap: 10px; }
+  .chain-card { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .chain-body { flex: 1 1 60%; min-width: 0; }
+  .chain-co2 { flex-basis: 100%; flex-direction: row; align-items: baseline; gap: 6px; }
+  .chain-status-dot { position: absolute; top: 12px; right: 12px; }
+  .chain-connector { bottom: -18px; }
+
+  /* Regulations: one per row */
+  .reg-grid { grid-template-columns: 1fr; }
+
+  /* QR card: QR-Code auf dem Handy ausblenden, Teilen bleibt */
+  .qr-card { padding: 1rem; }
+  .qr-hint, .qr-wrap, .qr-logo, .btn-dl { display: none; }
+  .url-row { margin-bottom: 0; }
+  .qr-card-header { margin-bottom: 12px; }
+  .share-actions { grid-template-columns: 1fr; margin-top: 12px; }
+  .btn-share { padding: 11px; font-size: 13px; }
+  .copy-btn { padding: 7px 10px; }
+
+  /* Not found */
+  .not-found { padding: 2.5rem 1rem; }
+}
+
+@media (max-width: 380px) {
+  .hero-title { font-size: 17px; }
+  .data-row { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .data-val { text-align: left; }
+}
 </style>

@@ -30,20 +30,11 @@
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="12" y="2" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="12" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M12 12h2v2h-2zM16 12v2M12 16h2M16 16v2M14 14h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           {{ t('products.qrCode') }}
         </button>
-        <a
-          v-if="product.isPublic"
-          :href="publicUrl"
-          target="_blank"
-          class="btn-secondary-link"
-        >
+        <a :href="publicUrl" target="_blank" class="btn-secondary-link">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M11 3h6v6M17 3l-8 8M8 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {{ t('products.publicView') }}
         </a>
-        <span v-else class="btn-secondary-link is-disabled" title="Der Pass ist noch nicht freigegeben.">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 9V6.5a4 4 0 0 1 8 0V9M4 9h12v8H4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-          Nicht freigegeben
-        </span>
-        <button class="btn-primary">
+        <button class="btn-primary" data-tour="export-pass" @click="exportPass">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 10v7h14v-7M10 3v10M7 10l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {{ t('products.exportReport') }}
         </button>
@@ -51,7 +42,7 @@
     </div>
 
     <!-- Completeness bar -->
-    <div class="completeness-banner" :class="`banner-${product.status}`">
+    <div class="completeness-banner" :class="`banner-${product.status}`" data-tour="completeness">
       <div class="completeness-info">
         <span class="comp-label">{{ t('products.completeness') }}</span>
         <span class="comp-val">{{ product.completeness }} %</span>
@@ -118,7 +109,7 @@
         </div>
 
         <!-- Data gaps -->
-        <div v-if="product.gaps.length" class="card card-alert">
+        <div v-if="product.gaps.length" class="card card-alert" data-tour="gaps">
           <h2 class="card-title alert-title">
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 3L18 17H2L10 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 9v4M10 15v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             {{ t('products.openGaps', { count: product.gaps.length }) }}
@@ -138,9 +129,22 @@
               <span class="gap-type-badge" :class="`gtb-${g.type}`">
                 {{ g.type === 'missing' ? t('products.gapMissing') : g.type === 'outdated' ? t('products.gapOutdated') : t('products.gapUnverified') }}
               </span>
+              <button
+                class="gap-resolve-btn"
+                :disabled="store.isSaving"
+                :aria-label="`Lücke ${g.label} als behoben markieren`"
+                @click="resolveOne(g.id)"
+              >
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
             </div>
           </div>
-          <button class="btn-fix-all">{{ t('products.fixAllGaps') }}</button>
+          <button class="btn-fix-all" :disabled="store.isSaving" @click="resolveAll">
+            {{ store.isSaving ? '…' : t('products.fixAllGaps') }}
+          </button>
+          <p v-if="store.error" class="gap-error" role="alert">{{ store.error }}</p>
         </div>
 
       </div>
@@ -149,30 +153,12 @@
       <div class="right-col">
 
         <!-- QR card -->
-        <div class="card card-qr">
+        <div class="card card-qr" data-tour="qr">
           <div class="qr-header">
             <h2 class="card-title">Öffentlicher Produktpass</h2>
             <span class="public-badge">Ohne Login zugänglich</span>
           </div>
           <p class="qr-desc">Dieser QR-Code verlinkt direkt auf den öffentlichen Produktpass – lesbar von Kunden, Einkäufern und Behörden ohne Anmeldung.</p>
-
-          <!-- Freigabe: ohne sie liefert /p/<slug> ein 404 -->
-          <div class="publish-row" :class="{ 'is-live': product.isPublic }">
-            <div class="publish-text">
-              <strong>{{ product.isPublic ? 'Öffentlich erreichbar' : 'Noch nicht freigegeben' }}</strong>
-              <span>{{ product.isPublic
-                ? 'Jede Person mit dem Link kann den Pass aufrufen.'
-                : 'Der Pass ist nur intern sichtbar. Erst nach der Freigabe funktionieren Link und QR-Code.' }}</span>
-            </div>
-            <button
-              class="publish-btn"
-              :disabled="store.isSaving || !canWrite"
-              :title="canWrite ? '' : 'Dafür wird die Rolle Admin oder Manager benötigt.'"
-              @click="togglePublic"
-            >
-              {{ product.isPublic ? 'Zurückziehen' : 'Freigeben' }}
-            </button>
-          </div>
 
           <div class="qr-canvas-wrap">
             <canvas ref="qrCanvas" width="160" height="160" class="qr-canvas" />
@@ -284,25 +270,13 @@ const route = useRoute()
 const store = useProductsStore()
 const product = computed(() => store.getById(route.params.id as string))
 
-const auth     = useAuthStore()
-const canWrite = computed(() => auth.can('write'))
-
-/** Pass freigeben bzw. zurueckziehen – steuert is_public in der Datenbank. */
-async function togglePublic() {
-  const p = product.value
-  if (!p) return
-  await store.setPublic(p.id, !p.isPublic)
-}
-
 // Load the product pass from the API when the page opens
 onMounted(() => { store.fetchOne(route.params.id as string) })
 
 // Public URL for this product
 const config = useRuntimeConfig()
-// Der oeffentliche Pass wird ueber den von der DB vergebenen Slug
-// adressiert, nicht ueber die Produkt-ID - die bleibt intern.
 const publicUrl = computed(() =>
-  `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${product.value?.publicSlug ?? ''}`
+  `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${product.value?.id}`
 )
 
 // QR refs
@@ -357,6 +331,39 @@ async function copyUrl() {
   setTimeout(() => { copied.value = false }, 2000)
 }
 
+// ── Produktpass exportieren ───────────────
+const { exportProduct } = useDppExport()
+function exportPass() {
+  if (product.value) exportProduct(product.value)
+}
+
+// ── Datenlücken schließen ─────────────────
+const { resolveGap } = useDpp()
+
+async function resolveOne(gapId: string) {
+  if (!product.value) return
+  await resolveGap(product.value.id, gapId)
+}
+
+/**
+ * Alle offenen Lücken auf einmal schließen. Das aendert den Compliance-Status
+ * des Produkts, deshalb einmal nachfragen – rueckgaengig macht es niemand.
+ */
+async function resolveAll() {
+  const p = product.value
+  if (!p) return
+
+  const open = p.gaps.filter(g => !g.resolvedAt)
+  if (!open.length) return
+  if (!confirm(`${open.length} offene Datenlücken als behoben markieren?`)) return
+
+  const ts = new Date().toISOString()
+  await store.update(p.id, {
+    gaps:         p.gaps.map(g => g.resolvedAt ? g : { ...g, resolvedAt: ts }),
+    completeness: 100,
+  })
+}
+
 async function shareUrl() {
   if (navigator.share) {
     await navigator.share({ title: product.value?.name, url: publicUrl.value })
@@ -367,38 +374,6 @@ async function shareUrl() {
 </script>
 
 <style scoped>
-/* Freigabe des oeffentlichen Passes */
-.publish-row {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 14px; margin: 0 0 1rem;
-  padding: 12px 14px; border-radius: 10px;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-}
-.publish-row.is-live {
-  background: var(--color-ok-bg);
-  border-color: transparent;
-}
-.publish-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.publish-text strong { font-size: 13px; font-weight: 600; color: var(--color-text-1); }
-.publish-text span   { font-size: 12px; color: var(--color-text-2); }
-.publish-btn {
-  flex-shrink: 0;
-  padding: 7px 14px; border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-1);
-  font-size: 12px; font-weight: 500; cursor: pointer;
-}
-.publish-btn:hover:not(:disabled) { background: var(--color-surface-2); }
-.publish-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.btn-secondary-link.is-disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
 .detail-page { display: flex; flex-direction: column; gap: 16px; }
 
 /* Header */
@@ -610,4 +585,17 @@ async function shareUrl() {
 
 /* Not found */
 .not-found { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 4rem; color: var(--color-text-2); }
+
+.gap-resolve-btn {
+  width: 26px; height: 26px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--color-border); border-radius: 6px;
+  background: var(--color-surface); color: var(--color-text-3); cursor: pointer;
+}
+.gap-resolve-btn:hover:not(:disabled) { color: var(--color-ok); border-color: var(--color-ok); }
+.gap-resolve-btn:disabled, .btn-fix-all:disabled { opacity: 0.5; cursor: not-allowed; }
+.gap-error {
+  margin: 10px 0 0; font-size: 12px; color: var(--color-crit);
+  background: var(--color-crit-bg); padding: 8px 10px; border-radius: 8px;
+}
 </style>

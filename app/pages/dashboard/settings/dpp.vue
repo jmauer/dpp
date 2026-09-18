@@ -22,7 +22,7 @@
               <div class="th-left">
                 <span class="th-dot" :class="`dot-${th.color}`" aria-hidden="true"/>
                 <div>
-                  <div class="th-name">{{ th.name }}</div>
+                  <div class="th-name">{{ t(`products.status.${th.key}`) }}</div>
                   <div class="th-desc">{{ th.desc }}</div>
                 </div>
               </div>
@@ -32,7 +32,7 @@
                   v-model.number="th.value"
                   type="number" min="0" max="100"
                   class="g-input num-input"
-                  :aria-label="`Schwellenwert für ${th.name}`"
+                  :aria-label="`Schwellenwert für ${t(`products.status.${th.key}`)}`"
                 />
                 <span class="th-suffix">%</span>
               </div>
@@ -42,14 +42,14 @@
           <!-- Visual preview bar -->
           <div class="threshold-preview" aria-hidden="true">
             <div class="preview-bar">
-              <div class="pb-seg pb-crit"  :style="{ width: thresholds[0].value + '%' }" />
-              <div class="pb-seg pb-warn"  :style="{ width: (thresholds[1].value - thresholds[0].value) + '%' }" />
-              <div class="pb-seg pb-ok"    :style="{ width: (100 - thresholds[1].value) + '%' }" />
+              <div class="pb-seg pb-crit"  :style="{ width: critAt + '%' }" />
+              <div class="pb-seg pb-warn"  :style="{ width: (warnAt - critAt) + '%' }" />
+              <div class="pb-seg pb-ok"    :style="{ width: (100 - warnAt) + '%' }" />
             </div>
             <div class="preview-labels">
-              <span class="pl-crit">0–{{ thresholds[0].value }} % {{ t('products.status.crit') }}</span>
-              <span class="pl-warn">{{ thresholds[0].value }}–{{ thresholds[1].value }} % {{ t('products.status.warn') }}</span>
-              <span class="pl-ok">{{ thresholds[1].value }}–100 % {{ t('products.status.ok') }}</span>
+              <span class="pl-crit">0–{{ critAt }} % {{ t('products.status.crit') }}</span>
+              <span class="pl-warn">{{ critAt }}–{{ warnAt }} % {{ t('products.status.warn') }}</span>
+              <span class="pl-ok">{{ warnAt }}–100 % {{ t('products.status.ok') }}</span>
             </div>
           </div>
 
@@ -94,7 +94,7 @@
               <button
                 class="remove-btn"
                 :aria-label="`Feld ${f.label || i + 1} entfernen`"
-                @click="requiredFields.splice(i, 1)"
+                @click="removeField(i)"
               >
                 <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -231,61 +231,55 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'default', middleware: 'auth' })
-const { t } = useI18n()
 
-const saved = reactive<Record<string, boolean>>({})
+const { t }    = useI18n()
+const settings = useSettingsStore()
 
-async function save(key: string) {
-  await new Promise(r => setTimeout(r, 500))
-  saved[key] = true
-  setTimeout(() => { saved[key] = false }, 3000)
+onMounted(() => { settings.fetchAll() })
+
+// Alle Abschnitte lesen und schreiben direkt im Settings-Store.
+const thresholds      = computed(() => settings.state.thresholds)
+const requiredFields  = computed(() => settings.state.requiredFields)
+const qr              = computed(() => settings.state.qr)
+const autoGapOptions  = computed(() => settings.state.autoGap.options)
+const saved           = computed(() => settings.saved)
+
+// Schwellen fuer die Vorschauleiste – ueber den Key statt ueber die Position,
+// damit die Reihenfolge im Store keine Rolle spielt.
+const thresholdAt = (key: string, fallback: number) =>
+  computed(() => settings.state.thresholds.find(t => t.key === key)?.value ?? fallback)
+const critAt = thresholdAt('crit', 50)
+const warnAt = thresholdAt('warn', 85)
+
+const autoGapInterval = computed({
+  get: () => settings.state.autoGap.interval,
+  set: (v: string) => { settings.state.autoGap.interval = v },
+})
+
+function save(section: 'thresholds' | 'fields' | 'qr' | 'autoGap') {
+  return settings.save(section)
 }
-
-const thresholds = reactive([
-  { key: 'crit', name: t('products.status.crit'), desc: 'DPP ist unvollständig – dringend Handlungsbedarf', color: 'crit', value: 50 },
-  { key: 'warn', name: t('products.status.warn'), desc: 'DPP hat kleinere Lücken – Nachbesserung empfohlen',  color: 'warn', value: 85 },
-])
-
-const requiredFields = ref([
-  { id: 'f1', label: 'CO₂-Gesamtbilanz',              regulation: 'EU ESPR', active: true  },
-  { id: 'f2', label: 'Materialzusammensetzung',        regulation: 'EU ESPR', active: true  },
-  { id: 'f3', label: 'Reparierbarkeitsindex',          regulation: 'EU ESPR', active: true  },
-  { id: 'f4', label: 'Recyclingquote',                 regulation: 'EU ESPR', active: true  },
-  { id: 'f5', label: 'REACH-Stoffdeklaration',         regulation: 'REACH',   active: true  },
-  { id: 'f6', label: 'CE-Konformitätserklärung',       regulation: 'CE',      active: true  },
-  { id: 'f7', label: 'Lieferanten Tier-1 verifiziert', regulation: 'LkSG',    active: true  },
-  { id: 'f8', label: 'State of Health (Batterien)',    regulation: 'EU Batterieverordnung', active: false },
-])
 
 const regulationOptions = ['EU ESPR', 'REACH', 'EU Batterieverordnung', 'LkSG', 'RoHS', 'CE', 'ISO 14040']
 
 function addField() {
-  requiredFields.value.push({ id: `f${Date.now()}`, label: '', regulation: '', active: true })
+  settings.state.requiredFields.push({
+    id:         `f-${Date.now()}`,
+    label:      '',
+    regulation: '',
+    active:     true,
+  })
 }
 
-const qr = reactive({
-  baseDomain:      'passport.mustergmbh.de',
-  errorCorrection: 'H',
-  color:           '#1A1916',
-  logo:            'brand',
-  publicAccess:    true,
-  showGapsPublic:  false,
-})
+function removeField(index: number) {
+  settings.state.requiredFields.splice(index, 1)
+}
 
 const logoOptions = [
   { value: 'brand', label: 'Firmenlogo' },
   { value: 'dpp',   label: 'PassPort DPP Logo' },
   { value: 'none',  label: 'Kein Logo' },
 ]
-
-const autoGapOptions = reactive([
-  { key: 'expiry',    title: 'Ablaufdatum-Prüfung',         desc: 'Zertifikate und Nachweise auf Gültigkeit prüfen',           value: true  },
-  { key: 'reg',       title: 'Neue Regulatorik-Pflichten',  desc: 'Bei neuen EU-Anforderungen automatisch Lücken erstellen',   value: true  },
-  { key: 'supplier',  title: 'Lieferanten-Änderungen',      desc: 'Neue Lücken erstellen wenn Lieferanten-Daten sich ändern',  value: false },
-  { key: 'co2',       title: 'CO₂-Daten veraltet',          desc: 'Lücke erzeugen wenn CO₂-Daten älter als 12 Monate sind',   value: true  },
-])
-
-const autoGapInterval = ref('weekly')
 </script>
 
 <style scoped>

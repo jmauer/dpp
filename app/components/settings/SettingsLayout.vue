@@ -37,6 +37,11 @@
           {{ t('settings.nav.notifications') }}
         </NuxtLink>
 
+        <NuxtLink to="/dashboard/settings/tour" class="nav-item" active-class="active">
+          <Compass class="nav-icon" :size="16" aria-hidden="true"/>
+          Einführung
+        </NuxtLink>
+
         <div class="nav-group-label">{{ t('settings.sections.system') }}</div>
 
         <NuxtLink to="/dashboard/settings/integrations" class="nav-item" active-class="active">
@@ -60,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { User, Users, Building2, BadgeAlert, ShieldCheck, BellRing, Webhook } from '@lucide/vue';
+import { User, Users, Building2, BadgeAlert, ShieldCheck, BellRing, Webhook, Compass } from '@lucide/vue';
 const { t } = useI18n()
 </script>
 
